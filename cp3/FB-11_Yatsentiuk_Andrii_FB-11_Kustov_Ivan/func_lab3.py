@@ -61,6 +61,17 @@ def RussianCheck(text):  #works good only with large texts
     else:
         return False
 
+def From_Number_To_Bigram(num):
+    m = 31
+    # X = x1*m +x2    66
+    x1 = 0
+    while (num-m*x1) > m:
+        x1 += 1
+
+    x2 = num - x1*m
+    string = letters[x1] + letters[x2]
+    return string
+
 def ReadText(filename, encoding):
     with open(filename, 'r', encoding=encoding) as file:
         file_contents = file.read()
@@ -99,3 +110,4 @@ def ReadText(filename, encoding):
     file_contents = file_contents.replace("*", "")
     return file_contents
 
+print(From_Number_To_Bigram(66))
