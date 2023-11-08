@@ -1,4 +1,5 @@
 letters = 'абвгдежзийклмнопрстуфхцчшщыьэюя'
+array = ['ешст', 'шяно', 'еыто', 'зоов'] # ШТ + ВТ   # 1 2 4 5
 
 
 def extended_euclid(a, b):
@@ -14,20 +15,6 @@ def mod_inverse(a, m):
         raise ValueError("Оберненого за модулем числа не існує")
     return x % m
 
-
-
-def Encode_Athene(a,b,letter,letters):
-    m = len(letters)
-    x = letters.find(letter)
-    index = (a*x+b)%m
-    return letters[index]
-
-
-def Decode_Athene(a,b,letter,letters):
-    m = len(letters)
-    x = letters.find(letter)
-    index = (mod_inverse(a,m))*(x-b)%m
-    return letters[index]
 
 
 def CountFreq(letter, text):
@@ -55,7 +42,6 @@ def RussianCheck(text):  #works good only with large texts
     while i < len(alphabet_letter_frequencies):
         difference = difference + abs(alphabet_letter_frequencies[i] - freq[i])
         i = i + 1
-
     if difference < 0.15:
         return True
     else:
@@ -69,8 +55,18 @@ def From_Number_To_Bigram(num):
         x1 += 1
 
     x2 = num - x1*m
+    #print(f"num: {num}")
+    #print(f"x1: {x1}")
+    #print(f"x2: {x2}")
     string = letters[x1] + letters[x2]
     return string
+
+def From_Bigram_To_Number(bigram):
+    # X = x1*m + x2
+    m = 31
+    x1 = letters.find(bigram[0])
+    x2 = letters.find(bigram[1])
+    return x1*m + x2
 
 def ReadText(filename, encoding):
     with open(filename, 'r', encoding=encoding) as file:
@@ -110,4 +106,44 @@ def ReadText(filename, encoding):
     file_contents = file_contents.replace("*", "")
     return file_contents
 
-print(From_Number_To_Bigram(66))
+
+def Solve(array):
+    m = 31
+    m = m^2
+
+    X1 = array[1][2:]
+    X2 = array[3][2:]
+    Y1 = array[1][:2]
+    Y2 = array[3][:2]
+
+    X1 = From_Bigram_To_Number(X1)
+    X2 = From_Bigram_To_Number(X2)
+    Y1 = From_Bigram_To_Number(Y1)
+    Y2 = From_Bigram_To_Number(Y2)
+
+    X = X1 - X2
+    Y = Y1 - Y2
+
+    if extended_euclid(X,m)[0] == 1:
+        INV_X = mod_inverse(X, m)
+        a = (Y * INV_X) % m
+        b = (Y1 - a * X1) % m
+        return [a,b]
+    else:
+        return "SMTHWW"
+
+def Decode(array, string):
+    m = 31
+    m = m^2
+    a = array[0]
+    b = array[1]
+    Y = From_Bigram_To_Number(string)
+    X = (mod_inverse(a, m) * (Y - b)) % m
+    #print(X)
+    return From_Number_To_Bigram(X)
+
+
+#print(From_Number_To_Bigram(66))
+print(Decode(Solve(array), 'ст'))
+
+
