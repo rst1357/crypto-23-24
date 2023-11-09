@@ -21,6 +21,17 @@ def save_text(filepath, text):
 
 #save_text("clean_text.txt", clean_text(path))
 
+def count_letters(filepath):    # Підрахунок символів у тексті
+    letter_dict = {}
+    text = read_text(filepath)
+    for letter in text:
+        if letter in letter_dict:
+            letter_dict[letter] += 1
+        else:
+            letter_dict[letter] = 1
+    letter_dict = dict(sorted(letter_dict.items(), key=lambda x: x[1], reverse=True))
+    return letter_dict
+
 def vigenere_cipher(text: str, key: str) -> str:
     alphabet = {
         'ru': 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя',
