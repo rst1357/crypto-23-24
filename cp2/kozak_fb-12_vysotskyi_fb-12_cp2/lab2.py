@@ -1,4 +1,5 @@
 from re import sub
+import random
 
 path = "idiot.txt"
 
@@ -41,3 +42,7 @@ def vigenere_cipher(text: str, key: str) -> str:
 
     return cipher_text
 
+def generate_key(length):
+    alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+    key = ''.join(random.choice(alphabet) for _ in range(length))
+    return key
