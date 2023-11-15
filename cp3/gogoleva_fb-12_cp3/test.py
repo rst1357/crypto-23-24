@@ -15,7 +15,7 @@ def gcd(b, n):
     return b, x0
 
 def modinv(a, m):
-    # Знаходження оберненого елементу за модулем m
+
     d, x = gcd(a, m)
     if d == 1:
         return d, x % m
@@ -33,24 +33,18 @@ def solve_linear_congruence(a, b, m):
         return [int(x0 + (i - 1) * m) for i in range(1, d + 1)]
 
 
-def count_bigrams(file_path):
+def count_bigrams_from_text(text):
     bigram_without_overlap_counts = {}
 
-    with open(file_path, 'r', encoding='utf-8') as file:
-        text = file.read()
 
-    cleaned_text = text.lower()
+    for i in range(len(text) - 1):
+        bigram_without_overlap = text[i:i + 2]
+        if bigram_without_overlap in bigram_without_overlap_counts:
+            bigram_without_overlap_counts[bigram_without_overlap] += 1
+        else:
+            bigram_without_overlap_counts[bigram_without_overlap] = 1
 
-    # Підрахунок частоти біграм
-    for i in range(len(cleaned_text) - 1):
-            # Підрахунок частоти біграм без перетину
-            bigram_without_overlap = cleaned_text[i:i + 2]
-            if bigram_without_overlap in bigram_without_overlap_counts:
-                bigram_without_overlap_counts[bigram_without_overlap] += 1
-            else:
-                bigram_without_overlap_counts[bigram_without_overlap] = 1
 
-    # Сортування біграм за частотою
     sorted_bigram_without_overlap = sorted(bigram_without_overlap_counts.items(), key=lambda x: x[1], reverse=True)
 
     return sorted_bigram_without_overlap
@@ -75,8 +69,8 @@ def count_b(x1, y1, a):
     return (y1 - a * x1) % len(alphabet) ** 2
 
 
-def all_possible_keys(string, key_size=5):
-    f_list = count_bigrams(string)[:key_size]
+def all_possible_keys(cleaned_text, key_size=5):
+    f_list = count_bigrams_from_text(cleaned_text)[:key_size]
     possible_keys = []
 
     for i in permutations(theoretical_bigrams, 2):
@@ -96,11 +90,16 @@ def decrypt(string, key):
     new_str = ''
 
     for i in range(0, len(string), 2):
-        y = alphabet.index(string[i]) * len(alphabet) + alphabet.index(string[i + 1])
-        x = (modinv(key[0], len(alphabet) ** 2)[1] * (y - key[1])) % len(alphabet) ** 2
-        new_str += alphabet[x // len(alphabet)] + alphabet[x % len(alphabet)]
+        try:
+            y = alphabet.index(string[i]) * len(alphabet) + alphabet.index(string[i + 1])
+            x = (modinv(key[0], len(alphabet) ** 2)[1] * (y - key[1])) % len(alphabet) ** 2
+            new_str += alphabet[x // len(alphabet)] + alphabet[x % len(alphabet)]
+        except ValueError:
+            print(f"Non-alphabet character found at position {i}: '{string[i]}' or '{string[i + 1]}'")
+            return None
 
     return new_str
+
 def find_entropy(decrypted_text):
     entropy_letter = 0.0
     total_letters = len(decrypted_text)
@@ -124,23 +123,18 @@ def check_the_text(decrypted_text):
         return decrypted_text
 
 def decrypt_and_check(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, 'r', encoding='windows-1251') as file:
         text = file.read()
 
-    cleaned_text = text.lower()
+    cleaned_text = ''.join([char for char in text.lower() if char in alphabet])
 
     keys = all_possible_keys(cleaned_text)
-
     for key in keys:
         decrypted_text = decrypt(cleaned_text, key)
-        
         if check_the_text(decrypted_text):
             print(f"Decrypted Text with Key {key}:")
             print(decrypted_text)
-            print("\n")
+        
 
-file_path = r"C:\Users\Polya\Desktop\KPI\crypto\crypto-23-24\tasks\cp3\variants.utf8\05.txt"
+file_path = r"C:\Users\Polya\Desktop\KPI\crypto\crypto-23-24\tasks\cp3\variants\05.txt"
 decrypt_and_check(file_path)
-
-decrypt_and_check(file_path)
-
