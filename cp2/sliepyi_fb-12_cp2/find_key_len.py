@@ -22,7 +22,7 @@ def calculate_coincidence_index(block):
 message = read("variant.txt")
 results = {}
 
-target_ic = 0.0467558  # Target IC value to find the closest match
+target_ic = 0.0467558  #Target IC value to find the closest match
 closest_ic_diff = float('inf') 
 closest_ic_key_length = None
 
