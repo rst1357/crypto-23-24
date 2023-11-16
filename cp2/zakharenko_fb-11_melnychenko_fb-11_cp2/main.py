@@ -69,6 +69,17 @@ class Task3:
             if text[i] == text[i + r]:
                 d += 1
         return d
+    
+    def coincidenceIndexForR(self, text, r):
+        counts = Counter(text)
+        coincidence = 0
+        for c in counts:
+            coincidence += counts[c] * (counts[c] - 1)
+
+        total_possible_coincidences = len(text) - r + 1
+        coincidence /= total_possible_coincidences * (total_possible_coincidences - 1)
+
+        return coincidence
 
     def findKey(self, text, r):
         x = ord('о')
@@ -124,13 +135,15 @@ def main():
 
     D = []
     for i in range(2, 32):
+        
+        coincidence_index = task3.coincidenceIndexForR(ciphertext, i)
         D.append(task3.coincidenceStatistics(ciphertext, i))
         print('r =', i, 'D =', D[i - 2])
+        print('Coincidence Index =', coincidence_index)
 
     period = D.index(max(D)) + 2
     key = task3.findKey(ciphertext, period)
     print('Task 3\nKey =', key)
-    key='улановсеребряныепули'
     decrypted_text = cipher.decrypt(cipher.toNumbers(ciphertext), cipher.toNumbers(key))
     print('Decrypted text:')
     print(cipher.fromNumbers(decrypted_text))
