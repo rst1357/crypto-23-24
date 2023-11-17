@@ -1,5 +1,9 @@
+from collections import Counter
+
+
 letters = 'абвгдежзийклмнопрстуфхцчшщыьэюя'
-array = ['ешст', 'шяно', 'еыто', 'зоов'] # ШТ + ВТ   # 1 2 4 5
+## ст но то ен ов
+## [('еш', 67), ('еы', 49), ('шя', 47), ('ск', 47), ('до', 46)]
 
 
 def extended_euclid(a, b):
@@ -49,16 +53,15 @@ def RussianCheck(text):  #works good only with large texts
 
 def From_Number_To_Bigram(num):
     m = 31
-    # X = x1*m +x2    66
+    # num = x1*m +x2    66
     x1 = 0
     while (num-m*x1) > m:
         x1 += 1
 
     x2 = num - x1*m
-    #print(f"num: {num}")
-    #print(f"x1: {x1}")
-    #print(f"x2: {x2}")
-    string = letters[x1] + letters[x2]
+
+    #print([num,x1,x2])
+    string = letters[x1] + letters[x2]   ##OUT OF RANGE ERROR 31?????
     return string
 
 def From_Bigram_To_Number(bigram):
@@ -67,6 +70,37 @@ def From_Bigram_To_Number(bigram):
     x1 = letters.find(bigram[0])
     x2 = letters.find(bigram[1])
     return x1*m + x2
+
+def find_most_frequent_pairs(input_string):
+    pairs = [input_string[i:i + 2] for i in range(0, len(input_string) - 1, 2)]
+    pair_counts = Counter(pairs)
+    most_frequent_pairs = pair_counts.most_common(10)
+    return most_frequent_pairs
+
+def Find_Coef(Xarray, Yarray): ##accepts X-array [X1, X2] and Y-array [Y1, Y2]
+    Y = Yarray[0]-Yarray[1]
+    X = Xarray[0]-Xarray[1]
+    m = 31**2
+    a = (Y * pow(X,-1, m))  #mod_inverse replaced with pow(x,-1,z)
+    b = (Yarray[0]-a*Xarray[0])%m
+    return [a,b]
+
+def SolveCoef(text):
+    pairs_encoded = find_most_frequent_pairs(encoded_text)
+    pairs = ["ст", "но", "то", "ен", "ов", "на", "не", "ра", "ли", "ни"]
+    coef_array = []
+    i = 0
+    while i < len(pairs)-1:
+        try:
+            Yarray = [From_Bigram_To_Number(pairs_encoded[i][0]), From_Bigram_To_Number(pairs_encoded[i+1][0])]
+            Xarray = [From_Bigram_To_Number(pairs[i]),From_Bigram_To_Number(pairs[i+1])]
+            coef_array.append(Find_Coef(Xarray, Yarray))
+        except:
+            i = i + 1
+            continue
+        i = i + 1
+    return coef_array
+
 
 def ReadText(filename, encoding):
     with open(filename, 'r', encoding=encoding) as file:
@@ -107,43 +141,26 @@ def ReadText(filename, encoding):
     return file_contents
 
 
-def Solve(array):
-    m = 31
-    m = m^2
-
-    X1 = array[1][2:]
-    X2 = array[3][2:]
-    Y1 = array[1][:2]
-    Y2 = array[3][:2]
-
-    X1 = From_Bigram_To_Number(X1)
-    X2 = From_Bigram_To_Number(X2)
-    Y1 = From_Bigram_To_Number(Y1)
-    Y2 = From_Bigram_To_Number(Y2)
-
-    X = X1 - X2
-    Y = Y1 - Y2
-
-    if extended_euclid(X,m)[0] == 1:
-        INV_X = mod_inverse(X, m)
-        a = (Y * INV_X) % m
-        b = (Y1 - a * X1) % m
-        return [a,b]
-    else:
-        return "SMTHWW"
-
-def Decode(array, string):
-    m = 31
-    m = m^2
-    a = array[0]
-    b = array[1]
-    Y = From_Bigram_To_Number(string)
-    X = (mod_inverse(a, m) * (Y - b)) % m
-    #print(X)
-    return From_Number_To_Bigram(X)
+def Decode_bigram(bigram, coef_array):  #coef_array [a,b]
+    m = 31**2
+    decoded_number = (pow(coef_array[0], -1, m) * (From_Bigram_To_Number(bigram)-coef_array[1]))%m
+    return From_Number_To_Bigram(decoded_number)
 
 
-#print(From_Number_To_Bigram(66))
-print(Decode(Solve(array), 'ст'))
+
+def Decode(text, coef_array):#coef_array [a,b]
+    decoded_text = ""
+    i = 0
+    while i < len(text)-2:
+        decoded_text = decoded_text + Decode_bigram(text[i:i+2], coef_array)
+        i = i + 1
+    return decoded_text
+
+
+
+encoded_text = ReadText("04.txt", "utf-8")
+print(SolveCoef(encoded_text))
+print(Decode(encoded_text, [116106, 737]))
+
 
 
