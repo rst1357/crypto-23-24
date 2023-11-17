@@ -17,7 +17,7 @@ def mod_inverse(a, m):
     d, x, y = extended_euclid(a, m)
     if d != 1:
         raise ValueError("Оберненого за модулем числа не існує")
-    return x % m
+    return x % m if x < 0 else x
 
 
 
@@ -46,7 +46,7 @@ def RussianCheck(text):  #works good only with large texts
     while i < len(alphabet_letter_frequencies):
         difference = difference + abs(alphabet_letter_frequencies[i] - freq[i])
         i = i + 1
-    if difference > 0.15 or any(bigram in text for bigram in ['аы', 'аь', 'бй', 'вй', 'гй', 'гф', 'гх', 'дй', 'еы', 'еь', 'жй', 'жф', 'жх', 'жш', 'жщ', 'зй', 'зп', 'зщ', 'иь', 'йа', 'йж', 'йй', 'йь', 'кщ', 'кй', 'лй', 'мй', 'нй', 'оь', 'пв', 'пг', 'пж', 'пз', 'пй', 'сй', 'тй', 'уь', 'фб', 'фж', 'фз', 'фй', 'фп', 'фх', 'фц', 'фщ', 'хж', 'хй', 'хщ', 'хь', 'хю', 'хя', 'цб', 'цж', 'цй', 'цф', 'цх', 'цч', 'цщ', 'ць', 'цю', 'ця', 'чб', 'чг', 'чз', 'чй', 'чп', 'чф', 'чщ', 'чю', 'чя', 'шд', 'шж', 'шз', 'шй', 'шш', 'шщ', 'щб', 'щг', 'щд', 'щж', 'щз', 'щй', 'щл', 'щп', 'щт', 'щф', 'щх', 'щц', 'щч', 'щш', 'щщ', 'щю', 'щя', 'ьа', 'яй', 'ьл', 'ьу', 'ьь', 'юу', 'юь', 'яа', 'яо', 'яь']):
+    if any(bigram in text for bigram in ['аы', 'аь', 'бй', 'вй', 'гй', 'гф', 'гх', 'дй', 'еы', 'еь', 'жй', 'жф', 'жх', 'жш', 'жщ', 'зй', 'зп', 'зщ', 'иь', 'йа', 'йж', 'йй', 'йь', 'кщ', 'кй', 'лй', 'мй', 'нй', 'оь', 'пв', 'пг', 'пж', 'пз', 'пй', 'сй', 'тй', 'уь', 'фб', 'фж', 'фз', 'фй', 'фп', 'фх', 'фц', 'фщ', 'хж', 'хй', 'хщ', 'хь', 'хю', 'хя', 'цб', 'цж', 'цй', 'цф', 'цх', 'цч', 'цщ', 'ць', 'цю', 'ця', 'чб', 'чг', 'чз', 'чй', 'чп', 'чф', 'чщ', 'чю', 'чя', 'шд', 'шж', 'шз', 'шй', 'шш', 'шщ', 'щб', 'щг', 'щд', 'щж', 'щз', 'щй', 'щл', 'щп', 'щт', 'щф', 'щх', 'щц', 'щч', 'щш', 'щщ', 'щю', 'щя', 'ьа', 'яй', 'ьл', 'ьу', 'ьь', 'юу', 'юь', 'яа', 'яо', 'яь']):  #if difference > 0.15 or
         return False
     else:
         return True
@@ -55,13 +55,13 @@ def From_Number_To_Bigram(num):
     m = 31
     # num = x1*m +x2    66
     x1 = 0
-    while (num-m*x1) > m:
+    while (num-m*x1) >= m:
         x1 += 1
 
     x2 = num - x1*m
 
     #print([num,x1,x2])
-    string = letters[x1] + letters[x2]   ##OUT OF RANGE ERROR 31?????
+    string = letters[x1] + letters[x2]
     return string
 
 def From_Bigram_To_Number(bigram):
@@ -153,14 +153,34 @@ def Decode(text, coef_array):#coef_array [a,b]
     i = 0
     while i < len(text)-2:
         decoded_text = decoded_text + Decode_bigram(text[i:i+2], coef_array)
-        i = i + 1
+        i = i + 2
     return decoded_text
 
 
+def BruteForce(text):  #coef_array [a,b]
+    m = len(letters)**2
+
+    i = 0
+    while i < m:
+        j = 0
+        while j < m:
+            try:
+                #print(f"a:{i}, b{j}")
+                if RussianCheck(Decode(text, [i,j])) is True:
+                    print(f"Returned True with a:{i}, b:{j}")
+                    j = j + 1
+                    continue
+                else:
+                    j = j + 1
+            except:
+                j = j + 1
+
+        i = i + 1
+
 
 encoded_text = ReadText("04.txt", "utf-8")
-print(SolveCoef(encoded_text))
-print(Decode(encoded_text, [116106, 737]))
+
+BruteForce(encoded_text)
 
 
 
