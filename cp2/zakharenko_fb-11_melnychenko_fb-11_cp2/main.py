@@ -123,9 +123,17 @@ def main():
     ciphertext = cipher.cleanText(ciphertext)
 
     D = []
-    for i in range(2, 32):
+    print('Task 3\nCoincidence Index for each r and d:')
+    for r in range(2, 32):
+        coincidence_indexes = []
         D.append(task3.coincidenceStatistics(ciphertext, i))
-        print('r =', i, 'D =', D[i - 2])
+        for i in range(r):
+            block = ciphertext[i::r]
+            index = text_analysis.coincidenceIndex(block)
+            coincidence_indexes.append(index)
+
+        average_index = sum(coincidence_indexes) / len(coincidence_indexes)
+        print(f'r = {r}, Average Coincidence Index = {average_index}')
 
     period = D.index(max(D)) + 2
     key = task3.findKey(ciphertext, period)
