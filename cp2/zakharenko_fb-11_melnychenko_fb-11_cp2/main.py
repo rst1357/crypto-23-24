@@ -75,7 +75,6 @@ class Task3:
         y_values = []
         for i in range(r):
             block = text[i::r]
-
             most_common_char = Counter(block).most_common(1)[0][0]
             y_values.append(ord(most_common_char))
         key = ''
@@ -111,31 +110,22 @@ def main():
     # 2
     coincidence_indexes = [text_analysis.coincidenceIndex(opentext)]
 
-    for i, encrypted_text in enumerate(encrypted_texts):
-        key = keys[i]
-        index = text_analysis.coincidenceIndex(encrypted_text)
-        coincidence_indexes.append(index)
-        print(f'key = {key}: coincidence index = {index}')
+    for encrypted_text in encrypted_texts:
+        coincidence_indexes.append(text_analysis.coincidenceIndex(encrypted_text))
 
     print('Task 2\nCoincidence indexes texts')
     print('Open text: coincidence index =', coincidence_indexes[0])
+    for i, key in enumerate(keys):
+        print(f'key = {key}: coincidence index =', coincidence_indexes[i + 1])
 
     # 3
     ciphertext = open('ciphertext.txt', 'r', encoding='utf-8').read()
     ciphertext = cipher.cleanText(ciphertext)
 
     D = []
-    print('Task 3\nCoincidence Index for each r and d:')
-    for r in range(2, 32):
-        coincidence_indexes = []
-        D.append(task3.coincidenceStatistics(ciphertext, r))
-        for i in range(r):
-            block = ciphertext[i::r]
-            index = text_analysis.coincidenceIndex(block)
-            coincidence_indexes.append(index)
-
-        average_index = sum(coincidence_indexes) / len(coincidence_indexes)
-        print(f'r = {r}, Average Coincidence Index = {average_index}')
+    for i in range(2, 32):
+        D.append(task3.coincidenceStatistics(ciphertext, i))
+        print('r =', i, 'D =', D[i - 2])
 
     period = D.index(max(D)) + 2
     key = task3.findKey(ciphertext, period)
