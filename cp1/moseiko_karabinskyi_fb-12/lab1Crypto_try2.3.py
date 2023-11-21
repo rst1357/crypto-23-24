@@ -118,6 +118,7 @@ bigram_frequencies = calculate_bigram_frequencies(write_file)
 bigram_frequencis_spaces = calculate_bigram_frequencies(write_file_spaces)
 tlf = total_letter_freq(letter_frequencies, write_file)
 tlf_spaces = total_letter_freq(letter_frequencies, write_file_spaces)
+tlf_spaces[' '] = 173725 / 1016605
 tbf = total_bigram_freq(bigram_frequencies)
 tbf_spaces = total_bigram_freq(bigram_frequencis_spaces)
 bigram_differ_freq = calculate_bigram_frequencies_without_same(write_file)
