@@ -1,5 +1,5 @@
 from collections import Counter
-
+import multiprocessing
 
 letters = 'абвгдежзийклмнопрстуфхцчшщыьэюя'
 ## ст но то ен ов
@@ -46,7 +46,8 @@ def RussianCheck(text):  #works good only with large texts
     while i < len(alphabet_letter_frequencies):
         difference = difference + abs(alphabet_letter_frequencies[i] - freq[i])
         i = i + 1
-    if any(bigram in text for bigram in ['аы', 'аь', 'бй', 'вй', 'гй', 'гф', 'гх', 'дй', 'еы', 'еь', 'жй', 'жф', 'жх', 'жш', 'жщ', 'зй', 'зп', 'зщ', 'иь', 'йа', 'йж', 'йй', 'йь', 'кщ', 'кй', 'лй', 'мй', 'нй', 'оь', 'пв', 'пг', 'пж', 'пз', 'пй', 'сй', 'тй', 'уь', 'фб', 'фж', 'фз', 'фй', 'фп', 'фх', 'фц', 'фщ', 'хж', 'хй', 'хщ', 'хь', 'хю', 'хя', 'цб', 'цж', 'цй', 'цф', 'цх', 'цч', 'цщ', 'ць', 'цю', 'ця', 'чб', 'чг', 'чз', 'чй', 'чп', 'чф', 'чщ', 'чю', 'чя', 'шд', 'шж', 'шз', 'шй', 'шш', 'шщ', 'щб', 'щг', 'щд', 'щж', 'щз', 'щй', 'щл', 'щп', 'щт', 'щф', 'щх', 'щц', 'щч', 'щш', 'щщ', 'щю', 'щя', 'ьа', 'яй', 'ьл', 'ьу', 'ьь', 'юу', 'юь', 'яа', 'яо', 'яь']):  #if difference > 0.15 or
+    # any(bigram in text for bigram in ['аы', 'аь', 'бй', 'вй', 'гй', 'гф', 'гх', 'дй', 'еы', 'еь', 'жй', 'жф', 'жх', 'жш', 'жщ', 'зй', 'зп', 'зщ', 'иь', 'йа', 'йж', 'йй', 'йь', 'кщ', 'кй', 'лй', 'мй', 'нй', 'оь', 'пв', 'пг', 'пж', 'пз', 'пй', 'сй', 'тй', 'уь', 'фб', 'фж', 'фз', 'фй', 'фп', 'фх', 'фц', 'фщ', 'хж', 'хй', 'хщ', 'хь', 'хю', 'хя', 'цб', 'цж', 'цй', 'цф', 'цх', 'цч', 'цщ', 'ць', 'цю', 'ця', 'чб', 'чг', 'чз', 'чй', 'чп', 'чф', 'чщ', 'чю', 'чя', 'шд', 'шж', 'шз', 'шй', 'шш', 'шщ', 'щб', 'щг', 'щд', 'щж', 'щз', 'щй', 'щл', 'щп', 'щт', 'щф', 'щх', 'щц', 'щч', 'щш', 'щщ', 'щю', 'щя', 'ьа', 'яй', 'ьл', 'ьу', 'ьь', 'юу', 'юь', 'яа', 'яо', 'яь'])
+    if difference > 0.25:  #if difference > 0.15 or
         return False
     else:
         return True
@@ -157,30 +158,74 @@ def Decode(text, coef_array):#coef_array [a,b]
     return decoded_text
 
 
-def BruteForce(text):  #coef_array [a,b]
+def BruteForce(text,minimun, maximum, proc_num):  #coef_array [a,b]
     m = len(letters)**2
 
-    i = 0
-    while i < m:
+    i = minimun
+    while i < maximum:
         j = 0
         while j < m:
             try:
-                #print(f"a:{i}, b{j}")
                 if RussianCheck(Decode(text, [i,j])) is True:
                     print(f"Returned True with a:{i}, b:{j}")
+                    print(f"Process {proc_num} ended.")
                     j = j + 1
-                    continue
+                    return
                 else:
                     j = j + 1
             except:
                 j = j + 1
 
         i = i + 1
-
+    print(f"Process {proc_num} ended.")
 
 encoded_text = ReadText("04.txt", "utf-8")
 
-BruteForce(encoded_text)
+test_text = ReadText("message.txt", "utf-8")
+
+print(Decode(encoded_text, [390,10]))
+
+"""
+if __name__ == "__main__":
+    encoded_text = ReadText("04.txt", "utf-8")
+
+    test_text = ReadText("message.txt", "utf-8")
 
 
+    process1 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 0, 100, 1))
+    process2 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 100, 200, 2))
+    process3 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 200, 300, 3))
+    process4 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 300, 400, 4))
+    process5 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 400, 500, 5))
+    process6 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 500, 600, 6))
+    process7 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 600, 700, 7))
+    process8 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 700, 800, 8))
+    process9 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 800, 900, 9))
+    process10 = multiprocessing.Process(target=BruteForce, args=(encoded_text, 900, 1000, 10))
+
+    # Start the processes
+    process1.start()
+    process2.start()
+    process3.start()
+    process4.start()
+    process5.start()
+    process6.start()
+    process7.start()
+    process8.start()
+    process9.start()
+    process10.start()
+
+    # Wait for both processes to finish
+    process1.join()
+    process2.join()
+    process3.join()
+    process4.join()
+    process5.join()
+    process6.join()
+    process7.join()
+    process8.join()
+    process9.join()
+    process10.join()
+
+"""
 
