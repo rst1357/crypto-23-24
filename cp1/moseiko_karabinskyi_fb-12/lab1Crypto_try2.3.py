@@ -20,6 +20,7 @@ def filtrate_with_spaces(ini_text,  write_file):
          file_2.write(text_i)
     file.close()
     file_2.close()
+
     
 def open_ans_write(txt_file):
     with open(txt_file) as file:
@@ -118,7 +119,9 @@ bigram_frequencies = calculate_bigram_frequencies(write_file)
 bigram_frequencis_spaces = calculate_bigram_frequencies(write_file_spaces)
 tlf = total_letter_freq(letter_frequencies, write_file)
 tlf_spaces = total_letter_freq(letter_frequencies, write_file_spaces)
-tlf_spaces[' '] = 173725 / 1016605
+file_to_count = open(write_file_spaces, 'r', encoding='utf-8')
+data_to_count = file_to_count.read()
+tlf_spaces[' '] = letter_frequencies_space[' ']/ len(data_to_count)
 tbf = total_bigram_freq(bigram_frequencies)
 tbf_spaces = total_bigram_freq(bigram_frequencis_spaces)
 bigram_differ_freq = calculate_bigram_frequencies_without_same(write_file)
