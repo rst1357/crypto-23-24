@@ -1,8 +1,9 @@
 from collections import Counter
 import multiprocessing
 
-letters = 'абвгдежзийклмнопрстуфхцчшщыьэюя'
-## ст но то ен ов
+#letters = 'абвгдежзийклмнопрстуфхцчшщыьэюя'
+letters = 'абвгдежзийклмнопрстуфхцчшщьыэюя'
+#№ ст но то ен ов
 ## [('еш', 67), ('еы', 49), ('шя', 47), ('ск', 47), ('до', 46)]
 
 
@@ -26,7 +27,7 @@ def CountFreq(letter, text):
     freq = text.count(letter)/len_text
     return freq
 
-def RussianCheck(text):  #works good only with large texts
+def RussianCheck(text):  #works good only with large texts or increase difference for smaller ones
     alphabet = "абвгдежзийклмнопрстуфхцчшщыьэюя"
     alphabet_letter_frequencies = [
         0.0801, 0.0159, 0.0454, 0.0165, 0.0298, 0.0849, 0.0072, 0.016, 0.0735,
@@ -181,7 +182,7 @@ def BruteForce(text,minimun, maximum, proc_num):  #coef_array [a,b]
 
 encoded_text = ReadText("04.txt", "utf-8")
 
-test_text = ReadText("message.txt", "utf-8")
+#test_text = ReadText("message.txt", "utf-8")
 
 print(Decode(encoded_text, [390,10]))
 
