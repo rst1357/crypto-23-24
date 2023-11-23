@@ -11,7 +11,12 @@ ALPHABET = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 
 path = "idiot.txt"
 
-KEYS = ("ха", "чур", "влад", "зорко", "скажипаляниця", "оченьдолгийключшифрования")
+KEYS = ("а",
+        "ха", "хм", "да",
+        "чур", "хэй", "три", "мда",
+        "влад", "макс", "клад", "пиво",
+        "зорко", "абвгд", "бвгде", "смысл", "жалко",
+        "скажипаляниця", "оченьдолгийключшифрования")
 
 def read_text(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -67,15 +72,16 @@ def index_of_coincidence(text: str) -> float:
     for symbol in ALPHABET:
         letter_occurences = text.count(symbol)
         index_value += letter_occurences * (letter_occurences - 1)
-    return index_value / len(ALPHABET) / (len(ALPHABET) - 1)
+    return index_value / len(text) / (len(text) - 1)
 
 
 if __name__ == "__main__":
     open_text = read_text("clean_text.txt")
-    print(f"Оригінальний текст. Індекс відповідності: {index_of_coincidence(open_text)}")
+    print(f"Відкритий текст. I_r={index_of_coincidence(open_text)}")
     for key in KEYS:
         encrypted_text = vigenere_encrypt(open_text, key)
         # print(encrypted_text, end="\n\n\n")
-        print(f"Текст, зашифрований ключем \"{key}\". Індекс відповідності: {index_of_coincidence(encrypted_text)}")
+        print(f"Шифротекст з ключем \"{key}\" (r={len(key)}). "
+              f"I_r={index_of_coincidence(encrypted_text)}")
 
 
