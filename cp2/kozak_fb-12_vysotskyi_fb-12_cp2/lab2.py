@@ -1,7 +1,17 @@
+"""
+9 варіант
+
+https://en.wikipedia.org/wiki/Index_of_coincidence
+"""
+
 from re import sub
 import random
 
+ALPHABET = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+
 path = "idiot.txt"
+
+KEYS = ("ха", "чур", "влад", "зорко", "скажипаляниця", "оченьдолгийключшифрования")
 
 def read_text(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -32,28 +42,40 @@ def count_letters(filepath):    # Підрахунок символів у те�
     letter_dict = dict(sorted(letter_dict.items(), key=lambda x: x[1], reverse=True))
     return letter_dict
 
-def vigenere_cipher(text: str, key: str) -> str:
-    alphabet = {
-        'ru': 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя',
-        'en': 'abcdefghijklmnopqrstuvwxyz'
-    }
-
-    lang = "ru"
+def vigenere_encrypt(text: str, key: str) -> str:
     cipher_text = ''
     key_index = 0
 
     for char in text:
 
-        char_index = alphabet[lang].index(char.lower())
+        char_index = ALPHABET.index(char.lower())
         key_char = key[key_index % len(key)]
         key_index += 1
 
-        cipher_char = alphabet[lang][(char_index + alphabet[lang].index(key_char.lower())) % len(alphabet[lang])]
+        cipher_char = ALPHABET[(char_index + ALPHABET.index(key_char.lower())) % len(ALPHABET)]
         cipher_text += cipher_char if char.islower() else cipher_char.upper()
 
     return cipher_text
 
 def generate_key(length):
-    alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-    key = ''.join(random.choice(alphabet) for _ in range(length))
+    key = ''.join(random.choice(ALPHABET) for _ in range(length))
     return key
+
+
+def index_of_coincidence(text: str) -> float:
+    index_value = 0
+    for symbol in ALPHABET:
+        letter_occurences = text.count(symbol)
+        index_value += letter_occurences * (letter_occurences - 1)
+    return index_value / len(ALPHABET) / (len(ALPHABET) - 1)
+
+
+if __name__ == "__main__":
+    open_text = read_text("clean_text.txt")
+    print(f"Оригінальний текст. Індекс відповідності: {index_of_coincidence(open_text)}")
+    for key in KEYS:
+        encrypted_text = vigenere_encrypt(open_text, key)
+        # print(encrypted_text, end="\n\n\n")
+        print(f"Текст, зашифрований ключем \"{key}\". Індекс відповідності: {index_of_coincidence(encrypted_text)}")
+
+
