@@ -77,11 +77,11 @@ def index_of_coincidence(text: str) -> float:
 
 if __name__ == "__main__":
     open_text = read_text("clean_text.txt")
+    encrypted_task = read_text("encrypted_task.txt")
     print(f"Відкритий текст. I_r={index_of_coincidence(open_text)}")
+    print(f"Зашифрований текст (9 варіант)I_r={index_of_coincidence(encrypted_task)}")
     for key in KEYS:
         encrypted_text = vigenere_encrypt(open_text, key)
         # print(encrypted_text, end="\n\n\n")
         print(f"Шифротекст з ключем \"{key}\" (r={len(key)}). "
               f"I_r={index_of_coincidence(encrypted_text)}")
-
-
