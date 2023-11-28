@@ -37,6 +37,7 @@ def euclid(a: int, b: int) -> list:
     return [b, u[-1], v[-1]]
     
 # Calculate euler function of a.
+# Returns phi(n).
 def euler(n: int, p=0, q=0) -> int:
     # Case incorrect input.
     if n <= 0:
@@ -54,6 +55,7 @@ def euler(n: int, p=0, q=0) -> int:
     return result
     
 # Calculate x in power a with module m (Horner's scheme).
+# Returns x ^ a mod m.
 def horner(x: int, a: int, m: int) -> int:
     # Transform a to binary form.
     # Return coefficient list [a_0, a_1, ... , a_k-1].
@@ -65,8 +67,8 @@ def horner(x: int, a: int, m: int) -> int:
         return result
         
     # Case incorrect input.
-    if x >= 0 or x < m or a >= 0:
-        print(f"horner: incorrect input x={x}, m={m}, a={a}")
+    if x < 0 or x >= m or a < 0:
+        print(f"horner: incorrect input x={x}, a={a}, m={m}")
         return -1
     a_bin = to_bin(a)
     k = len(a_bin)
@@ -77,9 +79,10 @@ def horner(x: int, a: int, m: int) -> int:
     return y
     
 # Check if p is prime.
+# Returns True if it is and False otherwise.
 def miller_rabin(p: int, k=MAX_K) -> bool:
     # Find such d and s that: p - 1 = d * 2 ^ s.
-    # Return list [d, s].
+    # Returns list [d, s].
     def decompose(p: int) -> list:
         if p % 2 == 0:
             print(f"miller_rabin (decompose): incorrect input {p}")
@@ -94,6 +97,7 @@ def miller_rabin(p: int, k=MAX_K) -> bool:
         return [d, s]
         
     # Check if p is a strong pseudoprime with base a (2 methods).
+    # Returns True if it is and False otherwise.
     def is_pseudoprime(p: int, a: int, d: int, s: int) -> bool:
         # Method I.        
         # Check if a ^ d = 1 (mod p).
@@ -137,6 +141,8 @@ def get_prime(n0: int, n1: int, k=MAX_K) -> int:
                 return m0 + 2 * i
 
 # Get a random prime that is suitable for RSA.
+# Returns prime number p of more than 256 bits: p = 2ip' + 1.
+# p' - a 256 bit prime number.
 def get_RSA_prime(k=MAX_K) -> int:
     MAX_ITERS = 5
     
@@ -163,33 +169,10 @@ def get_RSA_prime(k=MAX_K) -> int:
         counter += 1
     return p1
 
-# Transform string to a number.
-def to_num(M: str) -> int:
-    M = M.encode(encoding="UTF-8")
-    # Convert every character to hex.
-    h = []
-    for i in M:
-        h.append(hex(i))
-    # Remove extra '0x'.
-    for i in range(len(h)):
-        h[i] = h[i].replace("0x", '')
-    result = ''.join(h)
-    return int(result, 16)
-    
-# Transform string to a number.
-def from_num(num: int) -> str:
-    # Convert integer to hexadecimal.
-    h = hex(num)
-    # Convert bytes to characters.
-    chars = []
-    for i in range(2, len(h), 2):
-        chars.append(chr(int(h[i:i+2], 16)))
-    return ''.join(chars)
-   
 # Generate key pair list.
 # Returns key list [public_key, private_key].
 # public_key = [e, n]
-# private_key = [d, n]
+# private_key = [d, p, q]
 def generate_key_pair() -> list:
     e = pow(2, 16) + 1
     # Set basic case.
@@ -206,56 +189,83 @@ def generate_key_pair() -> list:
         phi = euler(n, p=p, q=q)
         val = euclid(e, phi)
     d = val[1]
-    return [[e, n], [d, n]]
+    return [[e, n], [d, p, q]]
 
-# Encrypt or decrypt a message m with a key.
-# Returns encrypted or decrypted message (single or multiple values).
-def crypt(m: int, key: list):
-    if m >= key[1]:
-        result = []
-        # Split m into blocks of length < n and encrypt them.
-        while m != 0:
-            result.append(pow(m % key[1], key[0], key[1]))
-            m //= key[1]
-        return result
-    else:
-        return pow(m, key[0], key[1])
+# Encrypt a message M with a public key pubkey = [e, n].
+# Returns encrypted message.
+def encrypt(M: int, pubkey: list) -> int:
+    e, n = pubkey
+    # Case invalid input.
+    if M >= n:
+        print(f"encrypt: invalid input M={M} >= n={n}")
+        return -1
+    
+    return horner(M, e, n)
+    
+# Decrypt a message C with a private key privkey = [d, p, q].
+# Returns decrypted message.
+def decrypt(C: int, privkey: list) -> int:
+    d, p, q = privkey
+    n = p * q
+    # Case invalid input.
+    if C >= n:
+        print(f"decrypt: invalid input C={C} >= n={n}")
+        return -1
 
-# Sign message M with privkey.
+    return horner(C, d, n)
+
+# Sign message M with a private key privkey = [d, p. q].
 # Returns list [M, S].
 # S - digital signature.
 def sign(M: int, privkey: list) -> list:
-    S = pow(M, privkey[0], privkey[1])
+    d, p, q = privkey
+    S = horner(M, d, p * q)
     return [M, S]
 
-# Check digital signature.
+# Check digital signature with a public key pubkey = [e, n].
+# Returns True if signature is correct and False otherwise.
 def verify(signed: list, pubkey: list) -> bool:
     M, S = signed
-    return pow(S, pubkey[0], pubkey[1]) == M
+    e, n = pubkey
+    return horner(S, e, n) == M
 
 # A sends encrypted signed secret key k to B.
 # k - secret key.
-# privkeyA = [d, n]
+# privkeyA = [d, p, q]
 # pubkeyA = [e, n]
 # pubkeyB = [e1, n1]
 # Returns list [k1, S1]
 def send_key(k: int, privkeyA: list, pubkeyA: list, pubkeyB: list) -> list:
+    d, p, q = privkeyA
+    e, n = pubkeyA
+    e1, n1 = pubkeyB
     # Case invalid input.
-    if pubkeyB[1] < pubkeyA[1]:
-        print(f"send_key: invalid input n1={pubkeyB[1]} < n={pubkeyA[1]}")
+    if k >= n:
+        print(f"send_key: invalid input k={k} >= n={n}")
         return -1
+    if n1 < n:
+        print(f"send_key: invalid input n1={n1} < n={n}")
+        return -1
+        
     # Calculate digital signatures S, S1 and key k1.
-    S = pow(k, privkeyA[0], privkeyA[1])
-    S1 = pow(S, pubkeyB[0], pubkeyB[1])
-    k1 = pow(k, pubkeyB[0], pubkeyB[1])
+    S = horner(k, d, n)
+    S1 = horner(S, e1, n1)
+    k1 = horner(k, e1, n1)
     return [k1, S1]
 
 # B receives encrypted signed secret key k from A and verifies it.
-def receive_key(signed: list, privkeyB: list, pubkeyB: list, pubkeyA: list) -> bool:
+# k - secret key.
+# privkeyB = [d1, p1, q1]
+# pubkeyA = [e, n]
+# pubkeyB = [e1, n1]
+# Returns True if signature is correct and False otherwise.
+def receive_key(signed: list, privkeyB: list, pubkeyA: list, pubkeyB: list) -> bool:
     k1, S1 = signed
+    d1, p1, q1 = privkeyB
+    e1, n1 = pubkeyB
     # Restore digital signature S and key k.
-    k = pow(k1, privkeyB[0], privkeyB[1])
-    S = pow(S1, privkeyB[0], privkeyB[1])
+    k = horner(k1, d1, n1)
+    S = horner(S1, d1, n1)
     return verify([k, S], pubkeyA)
     
 # Test all functions.
@@ -306,22 +316,18 @@ RSA prime = {get_RSA_prime(k=10)}""")
     # Generate key pair for RSA.
     keys = generate_key_pair()
     print(f"""\n=== RSA KEY PAIR GENERATION TEST ===
-public key\t(e, n) = ({keys[0][0]}, {keys[0][1]}
-private key\td = {keys[1][0]}""")
+Public key:\t(e, n) = ({keys[0]})
+Private key:\td, p, q = {keys[1][0]}, {keys[1][1]}, {keys[1][2]}""")
     # Encrypt and decrypt a message.
-    text = "hello"
-    encoded = to_num(text)
-    encrypted = crypt(encoded, keys[0])
-    decrypted = crypt(encrypted, keys[1])
-    decoded = from_num(decrypted)
+    M = randint(1, pow(2, 16))
+    C = encrypt(M, keys[0])
     print(f"""\n=== RSA ENCRYPTION/DECRYPTION TEST ===
-Original:\t\"{text}\"
-Encoded:\t{encoded}
-Encrypted:\t{encrypted}
-Decrypted:\t{decrypted}
-Decoded:\t\"{decoded}\"""")
+Original:\t{M}
+Encrypted:\t{C}
+Decrypted:\t{decrypt(C, keys[1])}""")
     # Sign and verify a message.
-    signed = sign(encoded, keys[1])
+    privkey = keys[1]
+    signed = sign(M, privkey)
     print(f"""\n=== RSA SIGN/VERIFY TEST ===
 Message:\t{signed[0]}
 Signature:\t{signed[1]}
@@ -336,14 +342,15 @@ Correct (wrong key):\t{verify(signed, [29, 79])}""")
         keysA = generate_key_pair()
     # Send and receive key.
     signed = send_key(k, keysA[1], keysA[0], keysB[0])
-    received_correct = receive_key(signed, keysB[1], keysB[0], keysA[0])
+    received_correct = receive_key(signed, keysB[1], keysA[0], keysB[0])
     print(f"""\n=== RSA SEND/RECEIVE KEY TEST ===
-A keys:\t({keysA[0][0], keysA[0][1]}), {keysA[1][0]}
-B keys:\t({keysB[0][0], keysB[0][1]}), {keysB[1][0]}
+Secret key:\t{k}
+A keys:\t(e, n) = ({keysA[0]}), (d, p, q) = {keysA[1]}
+B keys:\t(e1, n1) = ({keysB[0]}), (d1, p1, q1) = {keysB[1]}
 Message:\t{signed[0]}
 Signature:\t{signed[1]}
 Correct (right key):\t{received_correct}
-Correct (wrong key):\t{receive_key(signed, keysB[1], keysB[0], [29, 79])}""")
+Correct (wrong key):\t{receive_key(signed, keysB[1], [29, 79], keysB[0])}""")
     
 # Solve task.
 def solve() -> None:
