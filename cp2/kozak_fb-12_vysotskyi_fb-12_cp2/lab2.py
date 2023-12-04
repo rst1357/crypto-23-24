@@ -6,16 +6,22 @@ https://en.wikipedia.org/wiki/Index_of_coincidence
 
 from re import sub
 import random
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 ALPHABET = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 
 path = "idiot.txt"
 
-KEYS = ("а",
-        "ха", "хм", "да",
-        "чур", "хэй", "три", "мда",
-        "влад", "макс", "клад", "пиво",
-        "зорко", "абвгд", "бвгде", "смысл", "жалко",
+KEYS = ("ха", "хм", "да", "по", "ле",
+        "чур", "хэй", "три", "мда", "бот",
+        "влад", "макс", "клад", "пиво", "чего",
+        "зорко", "абвгд", "бвгде", "смысл", "жалко", "ботик", "бравл", "летал",
+        "крипта", "ненадо", "почему",
+        "джекпот", "человек",
+        "стэнфорд", "младенец",
+        "викакозак",
         "скажипаляниця", "оченьдолгийключшифрования")
 
 def read_text(filepath):
@@ -74,14 +80,30 @@ def index_of_coincidence(text: str) -> float:
         index_value += letter_occurences * (letter_occurences - 1)
     return index_value / len(text) / (len(text) - 1)
 
+def plot_coincidence_index(key_lengths, coincidence_values):
+    plt.figure(figsize=(10, 6))
+    for i, key_length in enumerate(key_lengths):
+        plt.plot(key_length, coincidence_values[i], marker='o')
+
+    plt.title('Index of Coincidence / Key Length')
+    plt.xlabel('Key Length')
+    plt.ylabel('Index of Coincidence')
+    plt.xticks(list(range(1, 6)))
+    plt.grid(True)
+    plt.show()
 
 if __name__ == "__main__":
     open_text = read_text("clean_text.txt")
-    encrypted_task = read_text("encrypted_task.txt")
+#   encrypted_task = read_text("encrypted_task.txt")
     print(f"Відкритий текст. I_r={index_of_coincidence(open_text)}")
-    print(f"Зашифрований текст (9 варіант)I_r={index_of_coincidence(encrypted_task)}")
+#   print(f"Зашифрований текст (9 варіант)I_r={index_of_coincidence(encrypted_task)}")
     for key in KEYS:
         encrypted_text = vigenere_encrypt(open_text, key)
         # print(encrypted_text, end="\n\n\n")
         print(f"Шифротекст з ключем \"{key}\" (r={len(key)}). "
               f"I_r={index_of_coincidence(encrypted_text)}")
+
+    key_lengths = [len(key) for key in KEYS if len(key) <= 5]
+    coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
+    plot_coincidence_index(key_lengths, coincidence_values)
+
