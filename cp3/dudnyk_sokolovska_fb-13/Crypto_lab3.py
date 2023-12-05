@@ -1,12 +1,15 @@
 from collections import defaultdict
 from math import gcd
 from typing import List
+from itertools import combinations
+
 
 frequent_bigrams = ["ст", "но", "то", "на", "ен"]
 # ["то", "он", "на", "не", "по"]
 alphabet = "абвгдежзийклмнопрстуфхцчшщыьэюя"
 #           0123456789012345678901234567890 -> 31
-non_tipical_bigrams = ["оь", "йц", "йш", "ъй", "йь", "йю", "йя", "щй", "ьй", "эь", "ыа", "щю"]
+non_tipical_bigrams = ["оь", "йц", "йш", "ъй", "йь", "йю", "йя", "щй", "ьй", "эь", "ыа", "щю"
+                       "гй", "фг", "йй", "ьь", "кы", ]
 
 
 # from lab1
@@ -44,8 +47,8 @@ def solve_linear_mod_expression(a:int, b:int, modulo:int):
         d = gcd(a, modulo)
         # Перевірка на кратність b до НСД(a, modulo) та на можливість знайти обернений елемент
         if b % d != 0 or pow(a // d, -1, modulo // d) == None:  
-            print(f"Рівняння {a}x = {b} mod({modulo}) не має розв'язків")
-            return
+            # print(f"Рівняння {a}x = {b} mod({modulo}) не має розв'язків")
+            return res
         else:
             x = pow(a // d, -1, modulo // d) * (b // d) % (modulo // d)
             res = [x + (modulo // d) * i for i in range(d)]  # усі можливі корені
@@ -90,7 +93,6 @@ def get_keys(text:str, frequent_bigrams:List[str] = frequent_bigrams, alphabet:s
 
     """шукаємо можливі ключі"""
 
-    # найчастіші біграми шифртексту
     sorted_values = sorted(frequency_bigrams(text).items(), key=lambda x: x[1], reverse=True)
     top_5_encrypted = list(dict(sorted_values[:5]).keys())
 
@@ -99,60 +101,62 @@ def get_keys(text:str, frequent_bigrams:List[str] = frequent_bigrams, alphabet:s
     X = encode_to_num(frequent_bigrams)
     Y = encode_to_num(top_5_encrypted)
 
-    X1 = X[0]
-    X2 = X[1]
-
-    Y1 = Y[0]
-    Y2 = Y[1]
-
-    keys_a = []
     keys_b = []
-    if X1 != X2 and Y1 != Y2:
-        keys_a = list(solve_linear_mod_expression((X1-X2)%mod, (Y1-Y2)%mod, mod))
-        for a in keys_a:
-            if a != 0:
-                keys_b.append((Y1 - a*X1) % mod)
-            else: 
-                keys_b.add(None)
-        print(f'Можливі a: {keys_a}')
-        print(f'Можливі b: {keys_b}')
-    return keys_a, keys_b
+    keys = defaultdict(int)
+
+    # Generate combinations of indices of X and Y
+    X_combinations = list(combinations(range(len(X)), 2))
+    Y_combinations = list(combinations(range(len(Y)), 2))
+
+    for x1, x2 in X_combinations:
+        for y1, y2 in Y_combinations:
+            if X[x1] != X[x2] and Y[y1] != Y[y2]:
+                a_values = solve_linear_mod_expression((X[x1]-X[x2])%mod, (Y[y1]-Y[y2])%mod, mod)
+                for a in a_values:
+                    if a != 0:
+                        b = (Y[y1] - a*X[x1]) % mod
+                        keys_b.append(b)
+                keys[a] = keys_b
+
+    print(f'Можливі a: {keys.keys()}')
+    print(f'Можливі b: {keys.values()}')
+    return keys
 
 
-def decipher(text:str, alphabet:str=alphabet): 
 
-    """розшифровуємо текст: Xi = a^(-1) * (Yi - b) mod (len(alphabet))^2 і повертаємо файл з результатом якзо текст змістовний"""
-
+def decipher(text: str, alphabet: str = alphabet): 
     final_text = ""
     decoded_nums = []
-    mod = len(alphabet)**2
-    a_keys, b_keys = get_keys(text)
+    mod = len(alphabet) ** 2
+    possible_keys = get_keys(text)
     numerated_bigrams = encode_to_num(list(frequency_bigrams(text).keys()))
 
     for Y in numerated_bigrams: 
-        for a in a_keys:
-            for b in b_keys:
-                decoded_nums.append(solve_linear_mod_expression(a, Y-b, mod))
-    
-    decoded_strings = []
-    for solutions in decoded_nums:
-        for solution in solutions:
-            if isinstance(solution, int):  # Перевіряємо, чи solution є цілим числом
-                solution = [solution]  # Якщо так, створюємо список з одним цілим числом
-            decoded_strings.append(decode_to_bigram(solution))
+        for a in possible_keys.keys():
+            for b in possible_keys.get(a):
+                decoded_nums.extend(solve_linear_mod_expression(a, Y - b, mod))
 
-    final_text = ''.join([''.join(decoded_string) for decoded_string in decoded_strings])
+                if pow(a, -1, mod) is not None: 
+                    x = solve_linear_mod_expression(a, b, mod)
+                    decoded_nums.extend(x)
 
-    if check_text(final_text): 
-        with open("decrypted_text.txt", "w", encoding="utf-8") as file:
-            file.write(final_text)
-    else:
-        print("Текст не змістовний, файлу не створено")
+                    test_text_list = decode_to_bigram(decoded_nums)
+                    test_text_string = ''.join(test_text_list)
 
-  
-# пошук найчастіших біграм у шифротексті
+            if check_text(test_text_string):
+                final_text = ''.join(test_text_list)
+                with open("decrypted_text.txt", "w", encoding="utf-8") as file:
+                    file.write(final_text)
+                    print("Текст змістовний, створено файл")
+                    return
+                    
+    print("Не вдалося знайти змістовний текст")
+
+
+
+        
 test_text = process_text("V1_for_test_utf8.txt")
-# get_keys(test_text)
+get_keys(test_text)
 
 decipher(test_text)
 # не виходить змістовний текст
