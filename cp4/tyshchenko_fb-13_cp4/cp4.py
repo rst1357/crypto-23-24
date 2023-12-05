@@ -5,6 +5,11 @@ import sys
 
 MAX_K = 20
 
+# Transform integer to hexadecimal in server's formatting.
+# Returns hex of a.
+def to_hex(a: int) -> str:
+    return hex(a)[2:].upper()
+
 # Calculate gcd and inverses.
 # Return list [gcd(a, b), a^(-1), b^(-1)].
 def euclid(a: int, b: int) -> list:
@@ -141,50 +146,50 @@ def get_prime(n0: int, n1: int, k=MAX_K) -> int:
                 return m0 + 2 * i
 
 # Get a random prime that is suitable for RSA.
-# Returns prime number p of more than 256 bits: p = 2ip' + 1.
-# p' - a 256 bit prime number.
-def get_RSA_prime(k=MAX_K) -> int:
+# Returns prime number such p that: p = 2ip' + 1.
+# p' - a prime number.
+def get_RSA_prime(bits=256, k=MAX_K, simple=False) -> int:
     MAX_ITERS = 5
     
-    # Generate random 256 prime.
+    # Generate random prime of a specified size.
     def get_RSA_prime() -> int:
-        nonlocal k
+        nonlocal bits, k
         while True:
-            x = getrandbits(256)
+            x = getrandbits(bits)
             # If x is even, make it odd.
             x += (x % 2 == 0)
             for p in range(x, (2 * x - 2) + 1, 2):
                 if miller_rabin(p, k):
                     return p
 
-    # Try to find such p that: p = 2ip' + 1. 
     p1 = get_RSA_prime()
-    i = 1
-    counter = 0
-    while counter < MAX_ITERS:
-        p = 2 * i * p1 + 1
-        if miller_rabin(p, k):
-            return p
-        i += 1
-        counter += 1
+    # If necessary, try to find such p that: p = 2ip' + 1. 
+    if not simple:
+        i = 1
+        counter = 0
+        while counter < MAX_ITERS:
+            p = 2 * i * p1 + 1
+            if miller_rabin(p, k):
+                return p
+            i += 1
+            counter += 1
     return p1
 
 # Generate key pair list.
 # Returns key list [public_key, private_key].
 # public_key = [e, n]
 # private_key = [d, p, q]
-def generate_key_pair() -> list:
-    e = pow(2, 16) + 1
+def generate_key_pair(bits=128, simple=False, e=2**16+1) -> list:
     # Set basic case.
-    p = get_RSA_prime()
-    q = get_RSA_prime()
+    p = get_RSA_prime(bits=bits, simple=simple)
+    q = get_RSA_prime(bits=bits, simple=simple)
     n = p * q
     phi = euler(n, p=p, q=q)
     # Find suitable primes p and q.
     val = euclid(e, phi)
     while val[0] != 1:
-        p = get_RSA_prime()
-        q = get_RSA_prime()
+        p = get_RSA_prime(bits=bits, simple=simple)
+        q = get_RSA_prime(bits=bits, simple=simple)
         n = p * q
         phi = euler(n, p=p, q=q)
         val = euclid(e, phi)
@@ -266,16 +271,16 @@ def receive_key(signed: list, privkeyB: list, pubkeyA: list, pubkeyB: list) -> b
     # Restore digital signature S and key k.
     k = horner(k1, d1, n1)
     S = horner(S1, d1, n1)
-    return verify([k, S], pubkeyA)
+    return [k, S]
     
 # Test all functions.
 def tests() -> None:
-    print("=== TESTS ===")
     # Find gcd and inverses.
     print(f"""\n=== GCD & INVERSES TEST ===
 euclid(155, 29) = {euclid(155, 29)}
 euclid(2, -5) = {euclid(2, -5)}
 euclid(-15, 40) = {euclid(-15, 40)}""")
+
     # Find euler function.
     print(f"""\n=== EULER FUNCTION TEST ===
 phi(1) = {euler(1)}
@@ -284,6 +289,7 @@ phi(6) = {euler(6)}
 phi(23147) (factorization is unknown) = {euler(23147)}
 phi(23147) (factorization is given) = {euler(23147, p=79, q=293)}""")
     #print(f"phi(-1) = {euler(-1)}")
+    
     # Calculate x ^ a (mod m).
     print(f"""\n=== HORNER'S SCHEME TEST ===
 14 ^ 8 mod 23 = {horner(14, 8, 23)}
@@ -295,6 +301,7 @@ phi(23147) (factorization is given) = {euler(23147, p=79, q=293)}""")
 12 ^ -5 mod 9 = {horner(12, -5, 9)}
 -7 ^ 1 mod 5 = {horner(-7, 1, 5)}""")
     '''
+    
     # Check prime number.
     print(f"""\n=== PRIME CHECK TEST ===
 9 is prime == {miller_rabin(9)}
@@ -306,6 +313,7 @@ phi(23147) (factorization is given) = {euler(23147, p=79, q=293)}""")
 1 is prime == {miller_rabin(1)}
 2 is prime == {miller_rabin(2)}""")
     '''
+    
     # Find some prime number on interval.
     print(f"""\n=== PRIME GENERATION TEST ===
 (1, 100) = {get_prime(1, 100)}
@@ -313,18 +321,21 @@ phi(23147) (factorization is given) = {euler(23147, p=79, q=293)}""")
 (500, 10000) = {get_prime(500, 10000)}
 (5000, 10000) = {get_prime(5000, 10000)}
 RSA prime = {get_RSA_prime(k=10)}""")
+
     # Generate key pair for RSA.
     keys = generate_key_pair()
     print(f"""\n=== RSA KEY PAIR GENERATION TEST ===
 Public key:\t(e, n) = ({keys[0]})
 Private key:\td, p, q = {keys[1][0]}, {keys[1][1]}, {keys[1][2]}""")
+
     # Encrypt and decrypt a message.
-    M = randint(1, pow(2, 16))
+    M = randint(1, 2 ** 16)
     C = encrypt(M, keys[0])
     print(f"""\n=== RSA ENCRYPTION/DECRYPTION TEST ===
 Original:\t{M}
 Encrypted:\t{C}
 Decrypted:\t{decrypt(C, keys[1])}""")
+
     # Sign and verify a message.
     privkey = keys[1]
     signed = sign(M, privkey)
@@ -333,6 +344,7 @@ Message:\t{signed[0]}
 Signature:\t{signed[1]}
 Correct (right key):\t{verify(signed, keys[0])}
 Correct (wrong key):\t{verify(signed, [29, 79])}""")
+
     # Key transferring.
     k = get_prime(1, 100)
     # Generate such pair of keys that: nA <= nB.
@@ -342,19 +354,124 @@ Correct (wrong key):\t{verify(signed, [29, 79])}""")
         keysA = generate_key_pair()
     # Send and receive key.
     signed = send_key(k, keysA[1], keysA[0], keysB[0])
-    received_correct = receive_key(signed, keysB[1], keysA[0], keysB[0])
+    received = receive_key(signed, keysB[1], keysA[0], keysB[0])
     print(f"""\n=== RSA SEND/RECEIVE KEY TEST ===
 Secret key:\t{k}
 A keys:\t(e, n) = ({keysA[0]}), (d, p, q) = {keysA[1]}
 B keys:\t(e1, n1) = ({keysB[0]}), (d1, p1, q1) = {keysB[1]}
-Message:\t{signed[0]}
-Signature:\t{signed[1]}
-Correct (right key):\t{received_correct}
-Correct (wrong key):\t{receive_key(signed, keysB[1], [29, 79], keysB[0])}""")
+Encrypted key:\t{signed[0]}
+Encrypted signature:\t{signed[1]}
+Decrypted key:\t{received[0]}
+Decrypted signature:\t{received[1]}""")
     
-# Solve task.
-def solve() -> None:
-    pass
+# Establish RSA communication between client and server.
+# Server link: http://asymcryptwebservice.appspot.com/?section=rsa
+# Receives input and shows output.
+def RSA(pubkey_server: list) -> None:
+    # Create client key pair.
+    pubkey_client, privkey_client = generate_key_pair()
+    e_client, n_client = pubkey_client
+    # Store server's public key.
+    e_server, n_server = pubkey_server
+    # Processing loop.
+    while True:
+        cmd = input("\nEnter command (\'h\' for help): ")
+        
+        if cmd == 'h':
+            print("""[INFO] All input data must be hexadecimal.
+[INFO] Command list:
+\th\t- show this message.
+\tk\t- list client's and server's public keys.
+\tq\t- terminate program.
+\te\t- encrypt specified message.
+\td\t- decrypt specified ciphertext.
+\tsi\t- sign specified message.
+\tv\t- verify server's signed message.
+\tse\t- send encrypted signed key to server.
+\tr\t- receive encrypted signed key from server and verify it.""")
+
+        # Show client's and server's public keys.
+        elif cmd == 'k':
+            print(f"""\n=== CLIENT PUBLIC KEY ===
+Modulus:\t{to_hex(n_client)}
+Public exponent:\t{to_hex(e_client)}\n
+=== SERVER PUBLIC KEY ===
+Modulus:\t{to_hex(n_server)}
+Public exponent:\t{to_hex(e_server)}""")
+
+        # Encrypt message on client to decrypt it on server.
+        elif cmd == 'e':
+            M = int(input("Enter message M: "), 16)
+            C = encrypt(M, pubkey_server)
+            print(f"Encrypted message C:\t{to_hex(C)}")
+            
+        # Decrypt encrypted message by server on client.
+        elif cmd == 'd':
+            C = int(input("Enter encrypted message C: "), 16)
+            M = decrypt(C, privkey_client)
+            print(f"Decrypted message M:\t{to_hex(M)}")
+        
+        # Sign a message for server.
+        elif cmd == "si":
+            M = int(input("Enter message M: "), 16)
+            signed = sign(M, privkey_client)
+            S = signed[1]
+            print(f"Message:\t{to_hex(M)}\nSignature:\t{to_hex(S)}")
+        
+        # Verify a message signed by server.
+        elif cmd == 'v':
+            M = int(input("Enter message M: "), 16)
+            S = int(input("Enter signature S: "), 16)
+            signed = [M, S]
+            result = verify(signed, pubkey_server)
+            print(f"[INFO] {result}")
+            
+        # Send a key to server.
+        elif cmd == "se":
+            k = get_RSA_prime()
+            while k >= n_client:
+                k = get_RSA_prime()
+            signed = send_key(k, privkey_client, pubkey_client, pubkey_server)
+            k1, S1 = signed
+            print(f"""Key k:\t{to_hex(k)}
+Encrypted key k1:\t{to_hex(k1)}
+Encrypted signature S1:\t{to_hex(S1)}""")
+            
+        # Receive and verify a key from server.
+        elif cmd == 'r':
+            k1 = int(input("Enter encrypted key k1: "), 16)
+            S1 = int(input("Enter encrypted signature S1: "), 16)
+            signed = [k1, S1]
+            received = receive_key(signed, privkey_client, pubkey_server, pubkey_client)
+            k, S = received
+            result = verify(received, pubkey_server)
+            print(f"""Decrypted key k:\t{to_hex(k)}
+Decrypted signature S:\t{to_hex(S)}
+[INFO] {result}""")
+            
+        # Quit program.
+        elif cmd == 'q':
+            print("Finishing program...")
+            break
+            
+        # Case incorrect input.
+        else:
+            print(f"[ERROR] Incorrect action passed: {action}")
 
 if __name__ == "__main__":
-    tests()
+    # Get server's modulus and public exponent as arguments.
+    if len(sys.argv) == 3:
+        n_server = int(sys.argv[1], 16)
+        e_server = int(sys.argv[2], 16)
+        pubkey_server = [e_server, n_server]
+        print("Starting RSA...")
+        RSA(pubkey_server)
+    # Run tests.
+    elif len(sys.argv) > 1 and sys.argv[1] == 't':
+        print("Establishing tests...")
+        tests()  
+        sys.exit(0)
+    else:
+        print(f"""USAGE: {sys.argv[0]} MODULUS PUBEXP
+\tMODULUS\t- server's modulus (hex).
+\tPUBEXP\t- server's public exponent (hex).""")
