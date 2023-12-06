@@ -323,42 +323,56 @@ phi(23147) (factorization is given) = {euler(23147, p=79, q=293)}""")
 RSA prime = {get_RSA_prime(k=10)}""")
 
     # Generate key pair for RSA.
-    keys = generate_key_pair()
+    pubkey, privkey = generate_key_pair()
     print(f"""\n=== RSA KEY PAIR GENERATION TEST ===
-Public key:\t(e, n) = ({keys[0]})
-Private key:\td, p, q = {keys[1][0]}, {keys[1][1]}, {keys[1][2]}""")
+Public key:
+\te = {pubkey[0]}
+\tn = {pubkey[1]}
+Private key:
+\td = {privkey[0]}
+\tp = {privkey[1]}
+\tq = {privkey[2]}""")
 
     # Encrypt and decrypt a message.
     M = randint(1, 2 ** 16)
-    C = encrypt(M, keys[0])
+    C = encrypt(M, pubkey)
     print(f"""\n=== RSA ENCRYPTION/DECRYPTION TEST ===
 Original:\t{M}
 Encrypted:\t{C}
-Decrypted:\t{decrypt(C, keys[1])}""")
+Decrypted:\t{decrypt(C, privkey)}""")
 
     # Sign and verify a message.
-    privkey = keys[1]
     signed = sign(M, privkey)
     print(f"""\n=== RSA SIGN/VERIFY TEST ===
 Message:\t{signed[0]}
 Signature:\t{signed[1]}
-Correct (right key):\t{verify(signed, keys[0])}
-Correct (wrong key):\t{verify(signed, [29, 79])}""")
+Correct (right key):\t{verify(signed, pubkey)}""")
+#Correct (wrong key):\t{verify(signed, [29, 79])}
 
     # Key transferring.
     k = get_prime(1, 100)
     # Generate such pair of keys that: nA <= nB.
-    keysA = generate_key_pair()
-    keysB = generate_key_pair()
-    while keysA[0][1] > keysB[0][1]:
-        keysA = generate_key_pair()
+    pubkeyA, privkeyA = generate_key_pair()
+    pubkeyB, privkeyB = generate_key_pair()
+    while pubkeyA[1] > pubkeyB[1]:
+        pubkeyA, privkeyA = generate_key_pair()
     # Send and receive key.
-    signed = send_key(k, keysA[1], keysA[0], keysB[0])
-    received = receive_key(signed, keysB[1], keysA[0], keysB[0])
+    signed = send_key(k, privkeyA, pubkeyA, pubkeyB)
+    received = receive_key(signed, privkeyB, pubkeyA, pubkeyB)
     print(f"""\n=== RSA SEND/RECEIVE KEY TEST ===
 Secret key:\t{k}
-A keys:\t(e, n) = ({keysA[0]}), (d, p, q) = {keysA[1]}
-B keys:\t(e1, n1) = ({keysB[0]}), (d1, p1, q1) = {keysB[1]}
+A keys:
+\te = {pubkeyA[0]}
+\tn = {pubkeyA[1]}
+\td = {privkeyA[0]}
+\tp = {privkeyA[1]}
+\tq = {privkeyA[2]}
+B keys:
+\te1 = {pubkeyB[0]}
+\tn1 = {pubkeyB[1]}
+\td1 = {privkeyB[0]}
+\tp1 = {privkeyB[1]}
+\tq1 = {privkeyB[2]}
 Encrypted key:\t{signed[0]}
 Encrypted signature:\t{signed[1]}
 Decrypted key:\t{received[0]}
@@ -392,9 +406,12 @@ def RSA(pubkey_server: list) -> None:
 
         # Show client's and server's public keys.
         elif cmd == 'k':
-            print(f"""\n=== CLIENT PUBLIC KEY ===
+            print(f"""\n=== CLIENT KEYS ===
 Modulus:\t{to_hex(n_client)}
-Public exponent:\t{to_hex(e_client)}\n
+Public exponent:\t{to_hex(e_client)}
+d:\t{to_hex(privkey_client[0])}
+p:\t{to_hex(privkey_client[1])}
+q:\t{to_hex(privkey_client[2])}\n
 === SERVER PUBLIC KEY ===
 Modulus:\t{to_hex(n_server)}
 Public exponent:\t{to_hex(e_server)}""")
