@@ -1,5 +1,6 @@
 import random
 import secrets
+import math
 def is_prime_miller_rabin(num, k=5):
     # Check for small numbers
     if num < 2:
@@ -52,21 +53,95 @@ def GetPrime():
 def _get_pq():
     num1 = GetPrime()
     num2 = GetPrime()
-    return (num1, num2)
+    return [num1, num2]
 
 def get_pq():
     #a for p1 b for q2
-    p, q = _get_pq()
-    p1, q1 = _get_pq()
+    pq = _get_pq()
+    p = pq[0]
+    q = pq[1]
+    pq1 = _get_pq()
+    p1 = pq1[0]
+    q1 = pq1[1]
     while p * q > p1 * q1:
-        p, q = get_pq()
-        p1,q1 = get_pq()
+        pq = _get_pq()
+        p = pq[0]
+        q = pq[1]
+        pq1 = _get_pq()
+        p1 = pq1[0]
+        q1 = pq1[1]
 
     return [[p,q],[p1,q1]]
 
 
+def generate_e(n):
+    while True:
+        candidate = random.randint(2, n-1)
+        if math.gcd(n, candidate) == 1:
+            return candidate
 
-print(get_pq())
+def extended_gcd(a, b):
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, y, x = extended_gcd(b % a, a)
+        return (g, x - (b // a) * y, y)
+
+def modinv(a, m):
+    g, x, y = extended_gcd(a, m)
+    if g != 1:
+        raise Exception('Modular inverse does not exist')
+    else:
+        return x % m
+
+def generate_d(p, q, e):
+    phi_n = (p - 1) * (q - 1)
+    d = modinv(e, phi_n)
+    return d
+
+def Generate_Keys():
+    PQ_array = get_pq()
+    e1 = generate_e((PQ_array[0][0]-1)*(PQ_array[0][1]-1))
+    e2 = generate_e((PQ_array[1][0] - 1) * (PQ_array[1][1] - 1))
+    d1 = generate_d(PQ_array[0][0], PQ_array[0][1], e1)
+    d2 = generate_d(PQ_array[1][0], PQ_array[1][1], e2)
+    n1 = PQ_array[0][0] * PQ_array[0][1]
+    n2 = PQ_array[1][0] * PQ_array[1][1]
+    return [[e1,n1,d1],[e2,n2,d2]]
+
+def Encode(message, n, e): # n and e are public keys. Message will be a string without numbers. (n = p*q, e is coprime of (p-1)*(q-1))
+    numbers = [ord(char) for char in message]
+    message = ""
+    temp = ""
+    for num in numbers:
+        if len(str(num)) == 2:
+            temp = "0" + str(num)
+            message = message + temp
+        else:
+            temp = str(num)
+            message = message + temp
+    message = str(random.randint(1,9)) + message # to make possible 0XX code at first pos, delete first number when decode
+    encoded_message = pow(int(message), e, n)
+    return encoded_message
+
+def Decode(message, n, d):
+    decoded_message_num = pow(message, d, n)
+    decoded_message_num_without_first = str(decoded_message_num)[1:]
+    decoded_message = ""
+    i = 0
+    while i < len(decoded_message_num_without_first) and decoded_message_num_without_first[i:i+3] != '':
+        batch = int(decoded_message_num_without_first[i:i+3])
+        char = chr(batch)
+        decoded_message = decoded_message + char
+        i = i + 3
+
+    return decoded_message
+
+
+keys = Generate_Keys()
+encoded = Encode("Hello World!", keys[0][1], keys[0][0]) # to encode you need nX, eX
+decoded = Decode(encoded, keys[0][1], keys[0][2]) # to decode you need nX, dX
+print(decoded)
 
 
 
