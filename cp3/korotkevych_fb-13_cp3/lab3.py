@@ -2,13 +2,20 @@ from collections import defaultdict
 
 alpha = "абвгдежзийклмнопрстуфхцчшщьыэюя"
 m = 31
-
+  
+    
 def egcd(a, b):
-    if a == 0:
-        return b, 0, 1
-    else:
-        gcd, x, y = egcd(b % a, a)
-        return gcd, y - (b // a) * x, x
+    u0, u1 = 1, 0
+    v0, v1 = 0, 1
+
+    while a != 0:
+        q = b // a
+        u0, u1 = u1, u0 - q * u1
+        v0, v1 = v1, v0 - q * v1
+        a, b = b % a, a
+
+    return b, v0, u0
+
 
 def inverse_elem(a, m):
     gcd, x, y = egcd(a, m)
@@ -17,6 +24,7 @@ def inverse_elem(a, m):
     else:
         return x % m
     
+
 def congruence(a, b, n):
 
     d, x, y = egcd(a, n)
