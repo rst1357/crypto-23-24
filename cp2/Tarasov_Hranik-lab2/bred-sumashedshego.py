@@ -18,7 +18,7 @@ import re
 from collections import Counter
 from operator import itemgetter
 
-BASEFOLDER = "/home/mhranik/kpi-labs/crypto-23-24/cp2/"
+BASEFOLDER = "/home/mhranik/kpi-labs/crypto-23-24/cp2/Tarasov_Hranik-lab2/"
 ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
 
 def calculate_ic(text):
