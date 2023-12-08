@@ -178,7 +178,7 @@ def get_RSA_prime(bits=256, k=MAX_K, simple=False) -> int:
 # Generate key pair list.
 # Returns key list [public_key, private_key].
 # public_key = [e, n]
-# private_key = [d, p, q]
+# private_key = [d, p, q, phi(n)]
 def generate_key_pair(bits=128, simple=False, e=2**16+1) -> list:
     # Set basic case.
     p = get_RSA_prime(bits=bits, simple=simple)
@@ -194,7 +194,7 @@ def generate_key_pair(bits=128, simple=False, e=2**16+1) -> list:
         phi = euler(n, p=p, q=q)
         val = euclid(e, phi)
     d = val[1]
-    return [[e, n], [d, p, q]]
+    return [[e, n], [d, p, q, phi]]
 
 # Encrypt a message M with a public key pubkey = [e, n].
 # Returns encrypted message.
@@ -210,7 +210,7 @@ def encrypt(M: int, pubkey: list) -> int:
 # Decrypt a message C with a private key privkey = [d, p, q].
 # Returns decrypted message.
 def decrypt(C: int, privkey: list) -> int:
-    d, p, q = privkey
+    d, p, q, _ = privkey
     n = p * q
     # Case invalid input.
     if C >= n:
@@ -223,7 +223,7 @@ def decrypt(C: int, privkey: list) -> int:
 # Returns list [M, S].
 # S - digital signature.
 def sign(M: int, privkey: list) -> list:
-    d, p, q = privkey
+    d, p, q, _ = privkey
     S = horner(M, d, p * q)
     return [M, S]
 
@@ -236,12 +236,12 @@ def verify(signed: list, pubkey: list) -> bool:
 
 # A sends encrypted signed secret key k to B.
 # k - secret key.
-# privkeyA = [d, p, q]
+# privkeyA = [d, p, q, phi(n)]
 # pubkeyA = [e, n]
 # pubkeyB = [e1, n1]
 # Returns list [k1, S1]
 def send_key(k: int, privkeyA: list, pubkeyA: list, pubkeyB: list) -> list:
-    d, p, q = privkeyA
+    d, p, q, _ = privkeyA
     e, n = pubkeyA
     e1, n1 = pubkeyB
     # Case invalid input.
@@ -260,13 +260,13 @@ def send_key(k: int, privkeyA: list, pubkeyA: list, pubkeyB: list) -> list:
 
 # B receives encrypted signed secret key k from A and verifies it.
 # k - secret key.
-# privkeyB = [d1, p1, q1]
+# privkeyB = [d1, p1, q1, phi(n1)]
 # pubkeyA = [e, n]
 # pubkeyB = [e1, n1]
 # Returns True if signature is correct and False otherwise.
 def receive_key(signed: list, privkeyB: list, pubkeyA: list, pubkeyB: list) -> bool:
     k1, S1 = signed
-    d1, p1, q1 = privkeyB
+    d1, p1, q1, _ = privkeyB
     e1, n1 = pubkeyB
     # Restore digital signature S and key k.
     k = horner(k1, d1, n1)
@@ -362,17 +362,19 @@ Correct (right key):\t{verify(signed, pubkey)}""")
     print(f"""\n=== RSA SEND/RECEIVE KEY TEST ===
 Secret key:\t{k}
 A keys:
-\te = {pubkeyA[0]}
-\tn = {pubkeyA[1]}
-\td = {privkeyA[0]}
-\tp = {privkeyA[1]}
-\tq = {privkeyA[2]}
+\te\t= {pubkeyA[0]}
+\tn\t= {pubkeyA[1]}
+\td\t= {privkeyA[0]}
+\tp\t= {privkeyA[1]}
+\tq\t= {privkeyA[2]}
+\tphi(n)\t= {privkeyA[3]}
 B keys:
-\te1 = {pubkeyB[0]}
-\tn1 = {pubkeyB[1]}
-\td1 = {privkeyB[0]}
-\tp1 = {privkeyB[1]}
-\tq1 = {privkeyB[2]}
+\te1\t= {pubkeyB[0]}
+\tn1\t= {pubkeyB[1]}
+\td1\t= {privkeyB[0]}
+\tp1\t= {privkeyB[1]}
+\tq1\t= {privkeyB[2]}
+\tphi(n1)\t= {privkeyB[3]}
 Encrypted key:\t{signed[0]}
 Encrypted signature:\t{signed[1]}
 Decrypted key:\t{received[0]}
@@ -387,6 +389,9 @@ def RSA(pubkey_server: list) -> None:
     e_client, n_client = pubkey_client
     # Store server's public key.
     e_server, n_server = pubkey_server
+    if n_client > n_server:
+        print("[INFO] Client's modulus is greater than server's: " + \
+            "possible data loss during encryption and key sending.")
     # Processing loop.
     while True:
         cmd = input("\nEnter command (\'h\' for help): ")
@@ -396,6 +401,8 @@ def RSA(pubkey_server: list) -> None:
 [INFO] Command list:
 \th\t- show this message.
 \tk\t- list client's and server's public keys.
+\tg[+-]\t- generate new key pair for client (modulus greater or less than server's respectively).
+\tu\t- update server public key.
 \tq\t- terminate program.
 \te\t- encrypt specified message.
 \td\t- decrypt specified ciphertext.
@@ -411,10 +418,38 @@ Modulus:\t{to_hex(n_client)}
 Public exponent:\t{to_hex(e_client)}
 d:\t{to_hex(privkey_client[0])}
 p:\t{to_hex(privkey_client[1])}
-q:\t{to_hex(privkey_client[2])}\n
+q:\t{to_hex(privkey_client[2])}
+phi(n):\t{to_hex(privkey_client[3])}\n
 === SERVER PUBLIC KEY ===
 Modulus:\t{to_hex(n_server)}
 Public exponent:\t{to_hex(e_server)}""")
+
+        # Generate new key pair for client.
+        elif cmd[0] == 'g':
+            # Case incorrect parameter.
+            if len(cmd) < 2 or cmd[1] not in "+-":
+                print(f"[ERROR] Incorrect command \'g[+-]\' syntax: {cmd}")
+                continue
+            # Case client's modulus should be less than server's.
+            elif cmd[1] == '-':
+                while n_client > n_server:
+                    pubkey_client, privkey_client = generate_key_pair()
+                    e_client, n_client = pubkey_client
+            # Case client's modulus should be greater than server's.
+            else:
+                while n_client < n_server:
+                    pubkey_client, privkey_client = generate_key_pair()
+                    e_client, n_client = pubkey_client
+            print("[INFO] Generated new key pair for client (\'k\' to show).")
+                    
+        # Update server public key (modulus and public exponent).
+        elif cmd == 'u':
+            n_server = int(input("Enter server's modulus: "), 16)
+            e_server = int(input("Enter server's public exponent: "), 16)
+            print("[INFO] Updated server's public key (\'k\' to show).")
+            if n_client > n_server:
+                print("[INFO] Client's modulus is greater than server's: " + \
+                    "possible data loss during encryption and key transferring.")
 
         # Encrypt message on client to decrypt it on server.
         elif cmd == 'e':
@@ -468,12 +503,12 @@ Decrypted signature S:\t{to_hex(S)}
             
         # Quit program.
         elif cmd == 'q':
-            print("Finishing program...")
+            print("[INFO] Finishing program...")
             break
             
-        # Case incorrect input.
+        # Case incorrect command.
         else:
-            print(f"[ERROR] Incorrect action passed: {action}")
+            print(f"[ERROR] Incorrect command passed: {command}")
 
 if __name__ == "__main__":
     # Get server's modulus and public exponent as arguments.
@@ -481,11 +516,11 @@ if __name__ == "__main__":
         n_server = int(sys.argv[1], 16)
         e_server = int(sys.argv[2], 16)
         pubkey_server = [e_server, n_server]
-        print("Starting RSA...")
+        print("[INFO] Starting RSA...")
         RSA(pubkey_server)
     # Run tests.
     elif len(sys.argv) > 1 and sys.argv[1] == 't':
-        print("Establishing tests...")
+        print("[INFO] Establishing tests...")
         tests()  
         sys.exit(0)
     else:
