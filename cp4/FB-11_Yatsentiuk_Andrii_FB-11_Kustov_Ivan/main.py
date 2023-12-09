@@ -1,6 +1,17 @@
 import random
 import secrets
 import math
+import string
+import hashlib
+import hmac
+
+
+
+def generate_random_string(length):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
+
 def is_prime_miller_rabin(num, k=5):
     # Check for small numbers
     if num < 2:
@@ -109,7 +120,7 @@ def Generate_Keys():
     n2 = PQ_array[1][0] * PQ_array[1][1]
     return [[e1,n1,d1],[e2,n2,d2]]
 
-def Encode(message, n, e): # n and e are public keys. Message will be a string without numbers. (n = p*q, e is coprime of (p-1)*(q-1))
+def Encrypt(message, n, e): # n and e are public keys. Message will be a string without numbers. (n = p*q, e is coprime of (p-1)*(q-1))
     numbers = [ord(char) for char in message]
     message = ""
     temp = ""
@@ -124,7 +135,7 @@ def Encode(message, n, e): # n and e are public keys. Message will be a string w
     encoded_message = pow(int(message), e, n)
     return encoded_message
 
-def Decode(message, n, d):
+def Decrypt(message, n, d):
     decoded_message_num = pow(message, d, n)
     decoded_message_num_without_first = str(decoded_message_num)[1:]
     decoded_message = ""
@@ -137,11 +148,48 @@ def Decode(message, n, d):
 
     return decoded_message
 
+#signatures
+def generate_key():
+    return hashlib.sha256(b"RSAisweird").digest() #generates a hash out of a string (key)
+
+def sign_message(message, key):
+    signature = hmac.new(key, message.encode('utf-8'), hashlib.sha256).digest() #generates a signature that is dependant on the message
+    return signature
+
+def verify_signature(message, signature, key):
+    expected_signature = sign_message(message, key) # verifies if the known signature is the same as calculated
+    return hmac.compare_digest(expected_signature, signature)
+
+
+
+
+
+
+#sender side
 
 keys = Generate_Keys()
-encoded = Encode("Hello World!", keys[0][1], keys[0][0]) # to encode you need nX, eX
-decoded = Decode(encoded, keys[0][1], keys[0][2]) # to decode you need nX, dX
-print(decoded)
+e1 = keys[0][0] #public key
+n1 = keys[0][1] #public key
+d1 = keys[0][2] #private key
+message = "Hello world, that's my real RSA encrypted message!"
+key = generate_key() # key generation
+signature = sign_message(message, key) # changes signature that depends on message
+encrypted = Encrypt(message, n1, e1)
+
+#signature + encrypted is getting sent
+
+#recipient side
+#key is already known
+decrypted = Decrypt(encrypted, n1, d1)
+if verify_signature(decrypted, signature, key):
+    print("Signature is verified.")
+    print(f"Message: {decrypted}")
+    print(f"Keys that were used: ")
+    print(f"Public key n: {n1}")
+    print(f"Public key e: {e1}")
+    print(f"Private key d: {d1}")
+else:
+    print("Signature is not verified.")
 
 
 
