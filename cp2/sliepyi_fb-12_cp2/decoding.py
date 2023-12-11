@@ -23,11 +23,11 @@ def decipherText(cipher_text, key):
     return "".join(deciphered_text)
 #Here we go
 if __name__ == "__main__":
-    input_file = "variant.txt"  # Замініть на ваш файл з зашифрованим текстом
-    output_file = "variant.decrypted.txt"  # Назва файлу для збереження результату розшифрування
+    input_file = "variant.txt"  
+    output_file = "variant.decrypted.txt"  
     with open(input_file, 'r', encoding='utf-8') as file:
         cipher_text = file.read()
-    key = generateKey(cipher_text, "")  # Використовуйте той самий ключ, який ви використовували для шифрування
+    key = generateKey(cipher_text, "")  
     decrypted_text = decipherText(cipher_text, key)
     with open(output_file, "w", encoding='utf-8') as file:
         file.write(decrypted_text)
