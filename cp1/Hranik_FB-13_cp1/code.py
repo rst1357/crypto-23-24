@@ -59,7 +59,7 @@ def h2(freq):
     return h2
 
 if __name__ == "__main__":
-    input_file = "sample.txt"
+    input_file = "/home/mhranik/kpi-labs/crypto-23-24/cp1/Hranik_FB-13_cp1/sample.txt"
     with open(input_file, 'r', encoding='utf-8') as input_file:
         extract = input_file.read()
     letter_freq_table_with_spaces = pd.DataFrame(list(letter_freq(text_transform(extract)).items()), columns=['Letter','Frequency'])
@@ -87,4 +87,4 @@ if __name__ == "__main__":
     print('Bigram redundancy with spaces and with intersections: ', 1-(h2(overlap(text_transform(extract)))/H0_WITH_SPACES))
     print('Bigram redundancy without spaces and with intersections: ', 1-(h2(overlap(text_transform(extract, False)))/H0_WITHOUT_SPACES))
     
-    
+

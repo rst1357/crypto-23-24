@@ -88,7 +88,7 @@ def blocks(period):
 def calculate_avg_ic(arr):
     resulting = 0
     result_arr = []
-    for i in range(1, len(arr)):
+    for i in range(0, len(arr)):
         resulting += calculate_ic(arr[i])
         result_arr.append([i, calculate_ic(arr[i])])
     return resulting / len(arr)
@@ -163,3 +163,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
