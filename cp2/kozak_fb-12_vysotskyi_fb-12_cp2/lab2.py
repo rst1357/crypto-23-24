@@ -98,7 +98,7 @@ def plot_coincidence_index(key_lengths, coincidence_values, main_coincedence):
 
 def find_key_length(encrypted_text: str):
     """За першим алгоритмом"""
-    for key_length in range(2, 31):
+    for key_length in range(6, 31):
         text_blocks = []
         for i in range(key_length):
             text_blocks.append(encrypted_text[i::key_length])
