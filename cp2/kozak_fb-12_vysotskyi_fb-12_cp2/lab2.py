@@ -80,10 +80,13 @@ def index_of_coincidence(text: str) -> float:
         index_value += letter_occurences * (letter_occurences - 1)
     return index_value / len(text) / (len(text) - 1)
 
-def plot_coincidence_index(key_lengths, coincidence_values):
+
+def plot_coincidence_index(key_lengths, coincidence_values, main_coincedence):
     plt.figure(figsize=(10, 6))
     for i, key_length in enumerate(key_lengths):
         plt.plot(key_length, coincidence_values[i], marker='o')
+
+    plt.plot((2, 6), (main_coincedence, main_coincedence))
 
     plt.title('Index of Coincidence / Key Length')
     plt.xlabel('Key Length')
@@ -92,11 +95,13 @@ def plot_coincidence_index(key_lengths, coincidence_values):
     plt.grid(True)
     plt.show()
 
+
 if __name__ == "__main__":
     open_text = read_text("clean_text.txt")
-#   encrypted_task = read_text("encrypted_task.txt")
+    encrypted_task = read_text("encrypted_task.txt")
+    encrypted_coincedence = index_of_coincidence(encrypted_task)
     print(f"Відкритий текст. I_r={index_of_coincidence(open_text)}")
-#   print(f"Зашифрований текст (9 варіант)I_r={index_of_coincidence(encrypted_task)}")
+    print(f"Зашифрований текст (9 варіант)I_r={encrypted_coincedence}")
     for key in KEYS:
         encrypted_text = vigenere_encrypt(open_text, key)
         # print(encrypted_text, end="\n\n\n")
@@ -105,5 +110,5 @@ if __name__ == "__main__":
 
     key_lengths = [len(key) for key in KEYS if len(key) <= 5]
     coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
-    plot_coincidence_index(key_lengths, coincidence_values)
+    plot_coincidence_index(key_lengths, coincidence_values, encrypted_coincedence)
 
