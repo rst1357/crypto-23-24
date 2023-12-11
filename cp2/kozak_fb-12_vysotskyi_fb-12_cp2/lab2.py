@@ -42,9 +42,8 @@ def save_text(filepath, text):
 
 #save_text("clean_text.txt", clean_text(path))
 
-def count_letters(filepath):    # Підрахунок символів у тексті
+def count_letters_from_text(text: str):
     letter_dict = {}
-    text = read_text(filepath)
     for letter in text:
         if letter in letter_dict:
             letter_dict[letter] += 1
@@ -52,6 +51,17 @@ def count_letters(filepath):    # Підрахунок символів у те�
             letter_dict[letter] = 1
     letter_dict = dict(sorted(letter_dict.items(), key=lambda x: x[1], reverse=True))
     return letter_dict
+
+
+def find_max(dictionary: dict):
+    max_index = None
+    for i in dictionary:
+        if max_index is None or dictionary[i] > dictionary[max_index]:
+            max_index = i
+    return dictionary[max_index]
+
+def count_letters_from_file(filepath):    # Підрахунок символів у тексті
+    return count_letters_from_text(read_text(filepath))
 
 def vigenere_encrypt(text: str, key: str) -> str:
     cipher_text = ''
@@ -67,6 +77,22 @@ def vigenere_encrypt(text: str, key: str) -> str:
         cipher_text += cipher_char if char.islower() else cipher_char.upper()
 
     return cipher_text
+
+
+def vigenere_decrypt(text: str, key: str) -> str:
+    open_text = ''
+    key_index = 0
+
+    for char in text:
+
+        char_index = ALPHABET.index(char.lower())
+        key_char = key[key_index % len(key)]
+        key_index += 1
+
+        cipher_char = ALPHABET[(char_index - ALPHABET.index(key_char.lower())) % len(ALPHABET)]
+        open_text += cipher_char if char.islower() else cipher_char.upper()
+
+    return open_text
 
 def generate_key(length):
     key = ''.join(random.choice(ALPHABET) for _ in range(length))
@@ -108,7 +134,27 @@ def find_key_length(encrypted_text: str):
             coincedence_index += index_of_coincidence(text_block)
         coincedence_index /= key_length  # Середнє арифметичне
         print(f"r={key_length}: IoC={coincedence_index}")
-        # print(len(text_blocks[0]))
+
+
+def caesar_analyse_text_block(text_block: str) -> str:
+    """Повертає можливий ключ тексту, зашифрованого шифом Цезаря"""
+    most_frequent = ("о", "е", "а", "и")
+    ukrainian_alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.lower()
+
+    frequencies = count_letters_from_text(text_block)
+    max_frequency = find_max(frequencies)
+
+    assumed_key = (ukrainian_alphabet.index(max_frequency) - ukrainian_alphabet.index(most_frequent[0])) % 33
+    # TODO
+
+
+def caesar_analyse_text(encrypted_text: str, key_length: int):
+    text_blocks = []
+    for i in range(key_length):
+        text_blocks.append(encrypted_text[i::key_length])
+    # TODO
+
+
 
 
 if __name__ == "__main__":
