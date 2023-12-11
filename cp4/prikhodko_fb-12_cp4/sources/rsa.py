@@ -26,6 +26,14 @@ class PubKey:
         ct = mod_pow(pt,e,n)
         return ct
         
+    def verify(self, pt, s):
+        if type(pt) == str: pt = s2l(pt)
+        pt_ = self.encrypt(s)
+        if pt == pt_:
+            return True 
+        else:
+            return False
+
     def export(self) -> list:
         return [self.e,self.n]
 
@@ -38,26 +46,44 @@ class PubKey:
 
 
 class PrivKey(PubKey):
-    def __init__(self, e, d, n):
+    def __init__(self, e, d, n, p=None):
         self.e = e 
         self.d = d 
         self.n = n
-    
+        self.p = p
+        if self.p != None:
+            self.q = n//self.p
+            self.dp = self.d % (self.p - 1)
+            self.dq = self.d % (self.q - 1)
+            self.q_inv = inverse(self.q, self.p)
+            self.p_inv = inverse(self.p, self.q)
+
     def decrypt(self,ct:int):
-        pt = pow(ct, self.d, self.n)
+        if self.p is None:
+            pt = pow(ct, self.d, self.n)
+        else:
+            # print(f"{e_} p,q are seted, CRT-RSA is used")
+            pt_p = mod_pow(ct % self.p, self.dp, self.p)
+            pt_q = mod_pow(ct % self.q, self.dq, self.q)
+            pt = (pt_p * self.q_inv * self.q + pt_q * self.p_inv * self.p) % self.n
         pt_ = l2s(pt)
         if not "Can't decode bytes: " in pt_:
             pt = pt_
         return pt 
+    
+    def sign(self, pt) -> list:
+        if type(pt) == str: pt = s2l(pt)
+        s = self.decrypt(pt)
+        return s
 
-    def sign(self, e, n, pt) -> list:
+    def signEncrypt(self, e, n, pt) -> list:
         ct = self.encrypt(pt, e, n)
         if type(pt) == str: pt = s2l(pt)
         s = self.decrypt(pt)
         s = self.encrypt(s, e, n)
         return ct, s
         
-    def verify(self, e, n, ct, s):
+    def verifyDecrypt(self, e, n, ct, s):
         pt = self.decrypt(ct)
         s_ = self.decrypt(s)
         pt_ = self.encrypt(s_, e, n)
@@ -87,7 +113,7 @@ class PrivKey(PubKey):
             φ = (q - 1) * (p - 1)
             d = inverse(e,φ)
             if d != -1:
-                return PrivKey(e,d,n), PubKey(e,n)
+                return PrivKey(e,d,n,p), PubKey(e,n)
 
 
 def signRoutine(): 
@@ -104,7 +130,7 @@ def signRoutine():
         print(f"{e_} Please enter only integer values.")
         return 
     priv = PrivKey(0,d1,n1)
-    ct,s = priv.sign(e2,n2,pt)
+    ct,s = priv.signEncrypt(e2,n2,pt)
     print(f"{e_} Signed message:\nct = {hex(ct)[2:]}\ns = {hex(s)[2:]}")
 
 def verifyRoutine():
@@ -123,7 +149,7 @@ def verifyRoutine():
         print(f"{e_} Please enter only integer values.")
         return 
     priv = PrivKey(0,d1,n1)
-    check, pt = priv.verify(e2,n2,ct,s)
+    check, pt = priv.verifyDecrypt(e2,n2,ct,s)
     if check:
         print(f"{e_} Signature verified! Recieved message: {hex(pt)[2:]}")
     else:
