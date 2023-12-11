@@ -96,6 +96,21 @@ def plot_coincidence_index(key_lengths, coincidence_values, main_coincedence):
     plt.show()
 
 
+def find_key_length(encrypted_text: str):
+    """За першим алгоритмом"""
+    for key_length in range(2, 31):
+        text_blocks = []
+        for i in range(key_length):
+            text_blocks.append(encrypted_text[i::key_length])
+
+        coincedence_index = 0.0
+        for text_block in text_blocks:
+            coincedence_index += index_of_coincidence(text_block)
+        coincedence_index /= key_length  # Середнє арифметичне
+        print(f"r={key_length}: IoC={coincedence_index}")
+        # print(len(text_blocks[0]))
+
+
 if __name__ == "__main__":
     open_text = read_text("clean_text.txt")
     encrypted_task = read_text("encrypted_task.txt")
@@ -107,6 +122,8 @@ if __name__ == "__main__":
         # print(encrypted_text, end="\n\n\n")
         print(f"Шифротекст з ключем \"{key}\" (r={len(key)}). "
               f"I_r={index_of_coincidence(encrypted_text)}")
+
+    find_key_length(encrypted_task)
 
     key_lengths = [len(key) for key in KEYS if len(key) <= 5]
     coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
