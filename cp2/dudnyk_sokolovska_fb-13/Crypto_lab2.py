@@ -6,13 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 alphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя"
-#           012345678901234567890123456789
-CI_RUSSIAN = 0.0553
-I0 = 0.03333333333333333
-FREQ_LETTERS = ['о', 'а', 'е', 'и', 'н', 'т']
+#           01234567890123456789012345678901
 
 # from lab1
-def process_text(file_name):
+def process_text(file_name:str):
     with open(file_name, "rt", encoding='utf-8') as file:
         text = file.read().lower().replace("\n", "").replace("ё", "е").replace(" ", "")
         symbols = "? , . … ; “ „ : -  ! ( ) * « » \ / — 1 2 3 4 5 6 7 8 9 0 №"
@@ -51,10 +48,6 @@ def decryption(text:str, key:str, output_file:str, alphabet:str = alphabet):
     with open(output_file, 'w', encoding='utf-8') as file:
         file.write(decrypted_text)
 
-def split_text(text:str, r:int):
-    parts = [text[i:i + r] for i in range(0, len(text), r)]
-    return parts
-
 def draw_graph(dictionary:dict):
     keys = list(dictionary.keys())
     values = list(dictionary.values())
@@ -64,6 +57,7 @@ def draw_graph(dictionary:dict):
     plt.ylabel('Індекси сумісності')
     plt.show()
 
+# індекс відповідності
 def get_I(text:str, alphabet:str = alphabet):
     letters_frequency = frequency(text, alphabet)
     denominator = len(text) * (len(text) - 1)
@@ -74,36 +68,67 @@ def get_I(text:str, alphabet:str = alphabet):
 def get_keys_I(text:str, alphabet:str = alphabet):
     keys_ci = defaultdict(int)
     for r in range(2, len(alphabet)):
-        text_parts = split_text(text, r)
-        keys_ci[r] = sum([get_I(part) for part in text_parts])/len(text_parts)
+        parts = ['']*r
+        for i,symbol in enumerate(text):
+            parts[i%r] += symbol
+        keys_ci[r] = sum([get_I(part) for part in parts])/len(parts)
     draw_graph(keys_ci)
+
+def get_key(text:str, key_length:int, alphabet:str = alphabet): 
+    parts = ['']*key_length
+    for i,symbol in enumerate(text):
+        parts[i%key_length] += symbol
+
+    key_data = ""
+    for i, part in enumerate(parts):
+        letters_frequency = frequency(part)
+        letter = max(letters_frequency.items(), key=lambda x: x[1])[0]
+
+        decoded_letter = alphabet[(alphabet.index(letter) - 14) % len(alphabet)]
+        key_data += decoded_letter
+    
+    return key_data
 
 def get_MI(frequency:dict, text:str):
     if len(text) == 0:
         return 0
     return sum([(val / len(text))**2 for val in frequency.values()])
 
-def generate_string(length:int, characters:str):
-    characters = ''.join(characters)
-    return ''.join(choice(characters) for _ in range(length))
+plain_text = process_text("text.txt")
+# text_to_decrypt = process_text("task.txt")
 
-# plain_text = process_text("text.txt")
-text_to_decrypt = process_text("task.txt")
-# with open("edited_task.txt", "w", encoding="utf-8") as file:
-#     file.write(text_to_decrypt)
-# print(text)
+# шифрування - тести з довільними ключами
+keys = {"ня":2, "мур":3, "лоля":4, "чайник":5, "оставьнадежду":13}
 
-# # шифрування
-# encryption(plain_text, "оставьнадежду", "output_encrypted_test.txt")
-# file = open("output_encrypted_test.txt", "rt", encoding='UTF-8')
-# text_to_decrypt = file.read()
-# decryption(text_to_decrypt, "оставьнадежду", "output_decrypted_test.txt")
+for key, value in keys.items():
+    encryption(plain_text, f'{key}', f'output_encrypted_test_{value}.txt')
+    file = open(f'output_encrypted_test_{value}.txt', "rt", encoding='UTF-8')
+    text_to_decrypt = file.read()
+    get_keys_I(text_to_decrypt)
+#     decryption(text_to_decrypt, f'{key}', f'output_decrypted_test_{value}.txt')
 
-# # індекс відповідності
-# print(f'I = {get_I(plain_text)}')
+# test_text = process_text("output_encrypted_test_")
+# get_keys_I()
 
-# # математичне очікування
-# print(f'MI = {get_MI(frequency(text), text)}')
 
-# ключі
-get_keys_I(text_to_decrypt)
+
+# індекс відповідності - тести
+# for key, value in keys.items():
+# print(f'оригінальний текст: I = {get_I(plain_text)}')
+# test_ci = process_text('test_outputs\\output_encrypted_test_2.txt')
+# print(get_I(test_ci))
+
+# # # математичне очікування
+# # print(f'MI = {get_MI(frequency(text_to_decrypt), text_to_decrypt)}')
+
+# # індекс відповідності - oh shit, here we go again
+# get_keys_I(text_to_decrypt)
+
+# # ключ
+# print(get_key(text_to_decrypt, 12))
+
+# FINALLLLLLLLYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+# decryption(text_to_decrypt, "вшебспирбуря", "output_decrypted_test.txt")
+
+# залежність між довжиною ключа та інлексом відповідності
+# оновити протокол
