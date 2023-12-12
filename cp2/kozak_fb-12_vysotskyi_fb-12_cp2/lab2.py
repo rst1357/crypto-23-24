@@ -9,8 +9,10 @@ import random
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from typing import Iterable
 
-ALPHABET = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+ALPHABET = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
+ALPHABET_LEN = len(ALPHABET)
 
 path = "idiot.txt"
 
@@ -53,12 +55,31 @@ def count_letters_from_text(text: str):
     return letter_dict
 
 
+def count_frequency_in_iterable(itetable: Iterable) -> dict:
+    dictionary = {}
+    for obj in itetable:
+        if obj in dictionary:
+            dictionary[obj] += 1
+        else:
+            dictionary[obj] = 1
+    return dictionary
+
+
 def find_max(dictionary: dict):
     max_index = None
     for i in dictionary:
         if max_index is None or dictionary[i] > dictionary[max_index]:
             max_index = i
-    return dictionary[max_index]
+    return max_index
+
+
+def sort_frequency(frequency: dict) -> list:
+    letters_by_frequency = list(frequency.keys())
+    letters_by_frequency.sort(key=lambda i: frequency[i], reverse=True)
+    print(letters_by_frequency)
+    print(frequency)
+    return letters_by_frequency
+
 
 def count_letters_from_file(filepath):    # Підрахунок символів у тексті
     return count_letters_from_text(read_text(filepath))
@@ -69,6 +90,7 @@ def vigenere_encrypt(text: str, key: str) -> str:
 
     for char in text:
 
+        char = "е" if char == "ё" else char
         char_index = ALPHABET.index(char.lower())
         key_char = key[key_index % len(key)]
         key_index += 1
@@ -85,6 +107,8 @@ def vigenere_decrypt(text: str, key: str) -> str:
 
     for char in text:
 
+        if char not in ALPHABET:
+            continue
         char_index = ALPHABET.index(char.lower())
         key_char = key[key_index % len(key)]
         key_index += 1
@@ -136,25 +160,40 @@ def find_key_length(encrypted_text: str):
         print(f"r={key_length}: IoC={coincedence_index}")
 
 
-def caesar_analyse_text_block(text_block: str) -> str:
-    """Повертає можливий ключ тексту, зашифрованого шифом Цезаря"""
-    most_frequent = ("о", "е", "а", "и")
-    ukrainian_alphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'.lower()
+def letter_diff(from_letter, to_letter):
+    return (ALPHABET.index(to_letter) - ALPHABET.index(from_letter)) % ALPHABET_LEN
+
+
+def caesar_analyse_text_block(text_block: str, index: int) -> str:
+    """Повертає можливий ключ тексту, зашифрованого шифром Цезаря"""
+    most_frequent = ("о", "е", "а", "и", "н", "т")
 
     frequencies = count_letters_from_text(text_block)
-    max_frequency = find_max(frequencies)
+    frequencies = sort_frequency(frequencies)
 
-    assumed_key = (ukrainian_alphabet.index(max_frequency) - ukrainian_alphabet.index(most_frequent[0])) % 33
-    # TODO
+    l = []
+    print("", *most_frequent, sep="\t")
+    for i in frequencies[:6]:
+        print(i, end="\t")
+        for j in most_frequent:
+            print(letter_diff(j, i), end="\t")
+            l.append(letter_diff(j, i))
+        print()
+
+    assumed_key: int = sort_frequency(count_frequency_in_iterable(l))[0]
+    return ALPHABET[assumed_key]
 
 
-def caesar_analyse_text(encrypted_text: str, key_length: int):
+def caesar_analyse_text(encrypted_text: str, key_length: int, index: int):
     text_blocks = []
+    assumed_keys = ""
     for i in range(key_length):
-        text_blocks.append(encrypted_text[i::key_length])
-    # TODO
+        text_block = encrypted_text[i::key_length]
+        text_blocks.append(text_block)
+        assumed_keys += caesar_analyse_text_block(text_block, index)
 
-
+    print(assumed_keys)
+    print(vigenere_decrypt(encrypted_text, assumed_keys))
 
 
 if __name__ == "__main__":
@@ -169,9 +208,12 @@ if __name__ == "__main__":
         print(f"Шифротекст з ключем \"{key}\" (r={len(key)}). "
               f"I_r={index_of_coincidence(encrypted_text)}")
 
+    print(encrypted_task)
     find_key_length(encrypted_task)
+    caesar_analyse_text(encrypted_task, 17, 0)
+    caesar_analyse_text(encrypted_task, 17, 1)
 
-    key_lengths = [len(key) for key in KEYS if len(key) <= 5]
-    coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
-    plot_coincidence_index(key_lengths, coincidence_values, encrypted_coincedence)
+    #key_lengths = [len(key) for key in KEYS if len(key) <= 5]
+    #coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
+    #plot_coincidence_index(key_lengths, coincidence_values, encrypted_coincedence)
 
