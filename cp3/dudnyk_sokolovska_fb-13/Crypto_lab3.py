@@ -9,7 +9,7 @@ frequent_bigrams = ["ст", "но", "то", "на", "ен"]
 alphabet = "абвгдежзийклмнопрстуфхцчшщыьэюя"
 #           0123456789012345678901234567890 -> 31
 non_tipical_bigrams = ["оь", "йц", "йш", "ъй", "йь", "йю", "йя", "щй", "ьй", "эь", "ыа", "щю"
-                       "гй", "фг", "йй", "ьь", "кы", ]
+                       "гй", "фг", "йй", "ьь", "кы", "зщ", "йь", "оы", "рц" ]
 
 
 # from lab1
@@ -92,9 +92,16 @@ def decode_to_bigram(bigrams_nums:List[int], alphabet:str = alphabet):
 def get_keys(text:str, frequent_bigrams:List[str] = frequent_bigrams, alphabet:str = alphabet):
 
     """шукаємо можливі ключі"""
-
     sorted_values = sorted(frequency_bigrams(text).items(), key=lambda x: x[1], reverse=True)
-    top_5_encrypted = list(dict(sorted_values[:5]).keys())
+    top_5_encrypted = []
+    count = 0
+    temp_values = []
+    # top_5_encrypted = list(dict(sorted_values[:5]).keys())
+    for key, val in sorted_values:
+        if val not in temp_values and count < 5:
+            temp_values.append(val)
+            top_5_encrypted.append(key)
+            count += 1
 
     mod = len(alphabet)**2
 
@@ -110,7 +117,7 @@ def get_keys(text:str, frequent_bigrams:List[str] = frequent_bigrams, alphabet:s
 
     for x1, x2 in X_combinations:
         for y1, y2 in Y_combinations:
-            if X[x1] != X[x2] and Y[y1] != Y[y2]:
+            if pow(x1 - x2, -1, mod) is not None:
                 a_values = solve_linear_mod_expression((X[x1]-X[x2])%mod, (Y[y1]-Y[y2])%mod, mod)
                 for a in a_values:
                     if a != 0:
@@ -118,45 +125,49 @@ def get_keys(text:str, frequent_bigrams:List[str] = frequent_bigrams, alphabet:s
                         keys_b.append(b)
                 keys[a] = keys_b
 
-    print(f'Можливі a: {keys.keys()}')
-    print(f'Можливі b: {keys.values()}')
+    # print(keys)
     return keys
 
 
-
-def decipher(text: str, alphabet: str = alphabet): 
-    final_text = ""
-    decoded_nums = []
+def decipher(text: str, alphabet: str = alphabet):
+    """ розшифровуємо текст"""
     mod = len(alphabet) ** 2
     possible_keys = get_keys(text)
     numerated_bigrams = encode_to_num(list(frequency_bigrams(text).keys()))
 
-    for Y in numerated_bigrams: 
-        for a in possible_keys.keys():
-            for b in possible_keys.get(a):
-                decoded_nums.extend(solve_linear_mod_expression(a, Y - b, mod))
+    for a, b_vals in possible_keys.items():
+        for b in b_vals:
+            if pow(a, -1, mod) is None:
+                continue
+            decrypted_nums = []
+            for y in numerated_bigrams:
+                x = (pow(a, -1, mod) * (y - b)) % mod
+                decrypted_nums.append(x)
+            decrypted_text = ''
+            for n in decrypted_nums:
+                l1 = n // len(alphabet)
+                l2 = n % len(alphabet)
+                bigram = alphabet[l1] + alphabet[l2]
+                decrypted_text += bigram
 
-                if pow(a, -1, mod) is not None: 
-                    x = solve_linear_mod_expression(a, b, mod)
-                    decoded_nums.extend(x)
+            if check_text(decrypted_text):
+                print("Текст змістовний, створено файл")
+                print(f"Ключі: a = {a}, b = {b}")
 
-                    test_text_list = decode_to_bigram(decoded_nums)
-                    test_text_string = ''.join(test_text_list)
-
-            if check_text(test_text_string):
-                final_text = ''.join(test_text_list)
-                with open("decrypted_text.txt", "w", encoding="utf-8") as file:
-                    file.write(final_text)
-                    print("Текст змістовний, створено файл")
-                    return
-                    
+                with open("decrypted.txt", "w", encoding="utf-8") as file:
+                    file.write(decrypted_text)
+                return 
     print("Не вдалося знайти змістовний текст")
+
+
+
+
 
 
 
         
 test_text = process_text("V1_for_test_utf8.txt")
-get_keys(test_text)
+# get_keys(test_text)
 
 decipher(test_text)
 # не виходить змістовний текст
