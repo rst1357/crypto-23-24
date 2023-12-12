@@ -35,5 +35,3 @@ if __name__ == "__main__":
     print(f"Загальна довжина тексту: {text_length} символів")
     index_of_coincidence = calculate_coincidence_index(letter_count, text_length)
     print(f"Індекс відповідності: {index_of_coincidence:.12}")
-
-
