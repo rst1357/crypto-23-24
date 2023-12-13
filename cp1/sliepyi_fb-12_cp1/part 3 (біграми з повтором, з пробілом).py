@@ -70,9 +70,3 @@ if __name__ == "__main__":
     
     bigram_entropy = calculate_bigram_entropy(bigram_frequency)
     print("Bigram Entropy:", bigram_entropy)
-
-
-
-
-
-
