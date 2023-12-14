@@ -164,7 +164,7 @@ def letter_diff(from_letter, to_letter):
     return (ALPHABET.index(to_letter) - ALPHABET.index(from_letter)) % ALPHABET_LEN
 
 
-def caesar_analyse_text_block(text_block: str, index: int) -> str:
+def caesar_analyse_text_block(text_block: str) -> str:
     """Повертає можливий ключ тексту, зашифрованого шифром Цезаря"""
     most_frequent = ("о", "е", "а", "и", "н", "т")
 
@@ -184,13 +184,13 @@ def caesar_analyse_text_block(text_block: str, index: int) -> str:
     return ALPHABET[assumed_key]
 
 
-def caesar_analyse_text(encrypted_text: str, key_length: int, index: int):
+def caesar_analyse_text(encrypted_text: str, key_length: int):
     text_blocks = []
     assumed_keys = ""
     for i in range(key_length):
         text_block = encrypted_text[i::key_length]
         text_blocks.append(text_block)
-        assumed_keys += caesar_analyse_text_block(text_block, index)
+        assumed_keys += caesar_analyse_text_block(text_block)
 
     print(assumed_keys)
     print(vigenere_decrypt(encrypted_text, assumed_keys))
@@ -210,8 +210,8 @@ if __name__ == "__main__":
 
     print(encrypted_task)
     find_key_length(encrypted_task)
-    caesar_analyse_text(encrypted_task, 17, 0)
-    caesar_analyse_text(encrypted_task, 17, 1)
+    caesar_analyse_text(encrypted_task, 17)
+    caesar_analyse_text(encrypted_task, 17)
 
     #key_lengths = [len(key) for key in KEYS if len(key) <= 5]
     #coincidence_values = [index_of_coincidence(vigenere_encrypt(open_text, key)) for key in KEYS if len(key) <= 5]
