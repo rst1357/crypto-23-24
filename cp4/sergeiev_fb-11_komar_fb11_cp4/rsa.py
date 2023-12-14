@@ -95,9 +95,9 @@ class RSA:
 
     # Завдвння 5
     def SendKey(self, k, key):
-        S = pow(k, self.d, self.n)
-        S1 = pow(S, key[1], key[0])
-        k1 = pow(k, key[1], key[0])
+        _, S = self.Sign(k)
+        S1 = self.Encrypt(S, key)
+        k1 = self.Encrypt(k, key)
 
         print(f'S = {S}\n'
               f'S1 = {S1}\n'
@@ -106,16 +106,17 @@ class RSA:
         return k1, S1
     
     def ReceiveKey(self, k1, S1, key):
-        k = pow(k1, self.d, self.n)
-        S = pow(S1, self.d, self.n)
+        k = self.Decrypt(k1)
+        S = self.Decrypt(S1)
 
         print(f'k = {k}\n'
               f'S = {S}')
 
-        if k == pow(S, key[1], key[0]):
-            print('Автентифікація пройдена.')
-        else:
-            print('Автентифікація не пройдена.')
+        self.Verify(k, S, key)
+        # if k == self.Encrypt(S, key):
+        #     print('Автентифікація пройдена.')
+        # else:
+        #     print('Автентифікація не пройдена.')
 
 
 if __name__ == '__main__':
@@ -149,10 +150,10 @@ if __name__ == '__main__':
           f'Розшифроване повідомлення за допомогою секретного ключа А: {decr_msg}\n\n'
           f'Повідомлення з цифровим підписом: {(message, sign)}\n')
 
-    A.Verify(message, sign, pub_a)
+    B.Verify(message, sign, pub_a)
 
     k = randint(1, A.n - 1)
     print(f'k = {k}')
 
     k1, S1 = A.SendKey(k, pub_b)
-    B.ReceiveKey(k1, S1, pub_a)
+    B.ReceiveKey(k1+10, S1, pub_a)
