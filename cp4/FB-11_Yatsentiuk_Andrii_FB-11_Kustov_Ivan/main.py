@@ -3,7 +3,6 @@ import secrets
 import math
 import string
 import hashlib
-import hmac
 
 
 
@@ -149,17 +148,16 @@ def Decrypt(message, n, d):
     return decoded_message
 
 #signatures
-def generate_key():
-    return hashlib.sha256(b"RSAisweird").digest() #generates a hash out of a string (key)
+def generate_signature(data, your_signature):
+    return hashlib.sha256((data + your_signature).encode()).digest() #generates a hash out of a string
 
-def sign_message(message, key):
-    signature = hmac.new(key, message.encode('utf-8'), hashlib.sha256).digest() #generates a signature that is dependant on the message
-    return signature
+def encrypt_signature(signature, n1, e1):
+    hex_string = ''.join(['{:02X}'.format(byte) for byte in signature])
+    return Encrypt(hex_string, n1, e1)
 
-def verify_signature(message, signature, key):
-    expected_signature = sign_message(message, key) # verifies if the known signature is the same as calculated
-    return hmac.compare_digest(expected_signature, signature)
-
+def check_signature(encrypted_signature, encrypted_text, n1, d1, your_signature):
+    signature =  bytes.fromhex(Decrypt(encrypted_signature, n1, d1))
+    return signature == generate_signature(Decrypt(encrypted_text, n1, d1), your_signature)
 
 
 
@@ -172,24 +170,28 @@ e1 = keys[0][0] #public key
 n1 = keys[0][1] #public key
 d1 = keys[0][2] #private key
 message = "Hello world, that's my real RSA encrypted message!"
-key = generate_key() # key generation
-signature = sign_message(message, key) # changes signature that depends on message
+signature_string = "MY_SIGNATURE"
 encrypted = Encrypt(message, n1, e1)
-
+signature = generate_signature(message, signature_string)
+encrypted_signature = encrypt_signature(signature, n1, e1)
 #signature + encrypted is getting sent
 
 #recipient side
 #key is already known
 decrypted = Decrypt(encrypted, n1, d1)
-if verify_signature(decrypted, signature, key):
-    print("Signature is verified.")
-    print(f"Message: {decrypted}")
-    print(f"Keys that were used: ")
-    print(f"Public key n: {n1}")
-    print(f"Public key e: {e1}")
-    print(f"Private key d: {d1}")
+if check_signature(encrypted_signature, encrypted, n1, d1, "MY_SIGNATURE"):
+    print("Signature is verified. Message is valid.")
+    print(f"Message {decrypted}")
+    print(f"Signature : {signature_string}")
+    print(f"Public keys :")
+    print(f"n: {n1}")
+    print(f"e: {e1}")
+    print(f"Private key : d: {d1}")
+
 else:
-    print("Signature is not verified.")
+    print("SOMEONE CHANGED THE MESSAGE!!!! SIGNATURE IS NOT VERIFIED!!!!")
+
+
 
 
 
