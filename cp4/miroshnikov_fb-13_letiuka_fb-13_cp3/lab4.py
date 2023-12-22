@@ -7,6 +7,7 @@ class RSA():
         self.d = None
         self.e = 2**16 + 1
         self.n = None
+        self.k = None
 
     def generate_key(self):
         self.p, self.q = gen_keys()
@@ -17,6 +18,8 @@ class RSA():
         
 def to_hex(n:int):
     return hex(n)[2:].upper()
+def to_decimal(hex):
+    return int(hex, 16)
 def decimal_to_binary(n):
     binary = bin(n)[2:]
     return binary
@@ -105,18 +108,22 @@ def verify(M, sign, sender):
 def send_key(user1, user2):
     while user1.n > user2.n:
         user1.generate_key()
-    k = random.randint(1, user1.n)
-    k1 = pow(k, user2.e, user2.n)
-    S = pow(k, user1.d, user1.n)
-    print(f'k - {k}\nS - {S}')
+    if not user1.k:
+        user1.k = random.randint(1, user1.n)
+    k1 = pow(user1.k, user2.e, user2.n)
+    S = pow(user1.k, user1.d, user1.n)
+    print(f'k - {to_hex(user1.k)}\nS - {to_hex(S)}')
     S1 = pow(S, user2.e, user2.n)
     return [k1, S1]
 
-def receive_key(user2, signed):
+def receive_key(user1, user2, signed):
     k1, S1 = signed
     k = pow(k1, user2.d, user2.n)
     S = pow(S1, user2.d, user2.n)
-    return [k, S]
+    if k == Encrypt(S, user1):
+        print('Автентифікація пройдена успішно')
+    else:
+        print('Не пощастило')
 
 
 
@@ -160,7 +167,16 @@ def main():
             encrypt = Encrypt(msg, crypt_user)
             print(f'Повідомлення - {to_hex(msg)}\nЗашифроване повідомлення - {to_hex(encrypt)}')
         elif action == '3.2':
-            print(f'Розшифроване повідомлення - {to_hex(Decrypt(encrypt, crypt_user))}')
+            encrypt1 = input("[Не обов'язково]\nВведіть зашифроване повідомлення(hex):")
+            if encrypt1:
+                crypt_user1 = input("Введіть того, кому надійшло повідомлення:")
+                for u in users:
+                    if u.name == crypt_user1:
+                        crypt_user1 = u
+                encrypt1 = to_decimal(encrypt1)
+                decrypt = to_hex(Decrypt(encrypt1, crypt_user1))
+            else: decrypt = to_hex(Decrypt(encrypt, crypt_user))
+            print(f'Розшифроване повідомлення - {decrypt}')
         elif action == '4':
             print('Хто підписує?')
             name = input("Ім'я користувача:")
@@ -181,12 +197,7 @@ def main():
                     b = u
             temp = send_key(a,b)
             print(f"k1 - {to_hex(temp[0])}\nS1 - {to_hex(temp[1])}")
-            temp2 = receive_key(b, temp)
-            print(f"k - {to_hex(temp2[0])}\nS - {to_hex(temp2[1])}")
-            if temp2[0] == pow(temp2[1], a.e, a.n):
-                print("Автентифікація успішна")
-            else:
-                print("Не пощастило")
+            receive_key(a, b, temp)
         else:
             temp = False       
 
