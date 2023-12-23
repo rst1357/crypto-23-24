@@ -1,10 +1,11 @@
 import random
 import math
 
+
 def horner_scheme(a, exp, modulo):
-    binary_exp = bin(exp)[2:]
+    bin_exp = bin(exp)[2:]
     result = 1
-    for bit in binary_exp:
+    for bit in bin_exp:
         result **= 2
         result %= modulo
         if bit == '1':
@@ -63,6 +64,7 @@ def is_prime_miller_rabin(n, k=20):  # при к = 20 ошибка состав�
 def generate_prime_of_bit_length(bit_length):
     start_range = 2 ** (bit_length - 1)  # найменьшее возможное число заданной длины
     end_range = 2 ** bit_length - 1      # найбольшее возможное число заданной длины
+
     while True:
         candidate = random.randint(start_range, end_range)
         if is_prime_miller_rabin(candidate):
@@ -87,7 +89,7 @@ def generate_key_pair(p, q):
     phi_n = (p - 1) * (q - 1)
     while True:
         e = random.randint(2, phi_n - 1)
-        if math.gcd(e, phi_n) == 1:  # извиняюсь за math, но работает значительно быстрее чем extended_gcd()
+        if math.gcd(e, phi_n) == 1:
             break
     d = modular_inverse(e, phi_n)
     public_key = (n, e)
@@ -116,12 +118,25 @@ def sign(message, private_key):
     return signature
 
 
-# Проверяем цифровую подпись для абонента
+# Проверяем цифровую подпись абонента
 def verify(signature, message, public_key):
     n, e = public_key
     decrypted_signature = horner_scheme(a=signature, exp=e, modulo=n)
     original_message = decrypted_signature
     return original_message == message
+
+
+def send_key(public_key_receiver, private_key_sender):
+    message = random.randint(0, 2**(256 - 1))  # генерируем сообщение
+    encrypted_message = encrypt(message, public_key_receiver)  # шифруем сообщение
+    signature = sign(message, private_key_sender)  # подписываем сообщение
+    return message, encrypted_message, signature
+
+
+def receive_key(encrypted_message, signature, private_key_receiver, public_key_sender):
+    decrypted_message = decrypt(encrypted_message, private_key_receiver)  # расшифровываем сообщение
+    verification_result = verify(signature, decrypted_message, public_key_sender)  # проверяем подпись
+    return decrypted_message, verification_result
 
 
 # Пара простых чисел для абонентов А и B (доп. проверка: https://www.dcode.fr/primality-test)
@@ -136,6 +151,7 @@ print("q_A =", q_A)
 print("Абонент B:")
 print("p_B =", p_B)
 print("q_B =", q_B)
+
 # number =
 # bit_count = math.floor(math.log2(number)) + 1
 # print(f"Бит в числе {number}: {bit_count}")
@@ -149,23 +165,32 @@ print("Секретный ключ А (n, d):", private_key_A)
 print("Открытый ключ B (n, e):", public_key_B)
 print("Секретный ключ B (n, d):", private_key_B)
 
-# Шифруем и расшифровываем сообщение для абонента A
-message_A = random.randint(0, 2**(256 - 1))
-encrypted_message_A = encrypt(message_A, public_key_B)
-decrypted_message_A = decrypt(encrypted_message_A, private_key_B)
+message_A, encrypted_message_A, signature_A = send_key(public_key_B, private_key_A)
+decrypted_message_A, verification_result_A = receive_key(encrypted_message_A, signature_A, private_key_B, public_key_A)
 
-# Абонент B проверяет подпись абонента A
-signature_A = sign(message_A, private_key_A)
-verification_result_A = verify(signature_A, message_A, public_key_A)
-print("\nАбонент A:")
+print("\nАбонент A")
 print("Сообщение:", message_A)
 print("Зашифрованное сообщение:", encrypted_message_A)
 print("Подпись:", signature_A)
-print("\nАбонент B:")
-print("Разшифрованное сообщение:", decrypted_message_A)
+
+print("\nАбонент B")
+print("Расшифрованное сообщение:", decrypted_message_A)
 print("Проверка цифровой подписи:", verification_result_A)
 
 
-
-
-
+'''Старая версия'''
+# # Шифруем и расшифровываем сообщение для абонента A
+# message_A = random.randint(0, 2**(256 - 1))
+# encrypted_message_A = encrypt(message_A, public_key_B)
+# decrypted_message_A = decrypt(encrypted_message_A, private_key_B)
+#
+# # Абонент B проверяет подпись абонента A
+# signature_A = sign(message_A, private_key_A)
+# verification_result_A = verify(signature_A, message_A, public_key_A)
+# print("\nАбонент A:")
+# print("Сообщение:", message_A)
+# print("Зашифрованное сообщение:", encrypted_message_A)
+# print("Подпись:", signature_A)
+# print("\nАбонент B:")
+# print("Разшифрованное сообщение:", decrypted_message_A)
+# print("Проверка цифровой подписи:", verification_result_A)
