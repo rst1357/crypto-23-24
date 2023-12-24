@@ -119,33 +119,45 @@ def modular_pow(base, e, mod):
 
 def encrypt_rsa(message, public_key):
     n, e = public_key
+    if type(message) == str:
+        message = encode(message)
     return modular_pow(message, e,n)
 
 
-def decrypt_rsa(message, secret_key):
+def decrypt_rsa(message, secret_key,text_or_dec):
     d = secret_key[2]
     p = secret_key[0]
     q = secret_key[1]
     n = p * q
-    return modular_pow(message, d, n)
+    message = modular_pow(message, d, n)
+    if text_or_dec == 'text':
+        return decode(message)
+    else:
+        return message
 
 
 
 def signature(message, secret_key):
-
     d = secret_key[2]
     p = secret_key[0]
     q = secret_key[1]
     n = p * q
-
-    return modular_pow(message, d, n)
+    if type(message) == str:
+        message_enc = encode(message)
+        msg = modular_pow(message_enc, d, n)
+    else:
+        msg = modular_pow(message, d, n)
+    return msg
 
 
 
 def verify_sign(sign_mes, message, public_key):
+    original_msg_bytes = message
     n, e = public_key
     tst = modular_pow(sign_mes, e, n)
-    return tst == message
+    if type(message) == str:
+        original_msg_bytes = encode(message)
+    return tst == original_msg_bytes
 
 def send_key(prvt_key_A, public_key_b, msg):
     k1 = encrypt_rsa(msg, public_key_b)
@@ -154,14 +166,18 @@ def send_key(prvt_key_A, public_key_b, msg):
     return k1,S1
 
 def recieve_key(prvt_key_B, public_A, k1, S1):
-    k = decrypt_rsa(k1, prvt_key_B)
-    S = decrypt_rsa(S1, prvt_key_B)
+    k = decrypt_rsa(k1, prvt_key_B, 'integer')
+    S = decrypt_rsa(S1, prvt_key_B, 'integer')
     if  verify_sign(S, k, public_A) == False:
         raise TypeError("cant verify signature")
     else:
         return k,S
 
+def encode(plain_text):
+    return int.from_bytes(plain_text.encode('utf-8'), 'big')
 
+def decode(encoded):
+    return encoded.to_bytes((encoded.bit_length()+7) // 8, 'big').decode('utf-8')
 print()
 
 qqq = gen_pp_qq1()
@@ -182,31 +198,32 @@ print("Таємний ключ B", secret_key_B)
 print("\n")
 
 #Завдання 4 користувач A
-Message = 123456789
+Message = 'hello lab4'
+msg_type = 'text'
 encrypted_message_A = encrypt_rsa(Message,  open_key_A)
 e_sign_A = signature(Message, secret_key_A)
 print("Оригінальне повідовлемення користувача A:", Message)
 print("Закодоване повідомлення користувачем A: ", encrypted_message_A)
 print("Повідомлення підписане цифровим підписом користувача A",e_sign_A)
-print("розкодоване повідомлення користувача A", decrypt_rsa(encrypted_message_A, secret_key_A))
+print("розкодоване повідомлення користувача A", decrypt_rsa(encrypted_message_A, secret_key_A, msg_type))
 print("Перевірка цифрового підпису користувача A, цифровий підпис вірний??? ==", verify_sign(e_sign_A, Message, open_key_A))
-#print(hex(n))
-print(hex(encrypted_message_A))
+print("хекс значення відкритого ключа A", hex(n))
+print("хекс значення закодованого повідомлення", hex(encrypted_message_A))
 
 print("\n")
 
 #Завдання 4 користувач B
-Message_2 = 988814
+Message_2 = 'your'
 encrypted_message_B = encrypt_rsa(Message_2,  open_key_B)
 e_sign_B = signature(Message_2, secret_key_B)
 print("Оригінальне повідовлемення користувача B:", Message_2)
 print("Закодоване повідомлення користувачем B: ", encrypted_message_B)
 print("Повідомлення підписане цифровим підписом користувача B",e_sign_B)
-print("розкодоване повідомлення користувача B", decrypt_rsa(encrypted_message_B, secret_key_B))
+print("розкодоване повідомлення користувача B", decrypt_rsa(encrypted_message_B, secret_key_B, msg_type))
 print("Перевірка цифрового підпису користувача B, цифровий підпис вірний??? ==", verify_sign(e_sign_B, Message_2, open_key_B))
-
 #Звдання 5
 
+#print(decrypt_rsa(int("069B8C35792CF3BE2B20688AFE1ACB1646D033862B0B036CA97049A25A9BE35492314E07D0D9C63299281EBAFBAA54AF52B9F8151CBE67AA5D4AC9E4076C8A57", 16), (25885032199362110136563390237314758407507842553587929606344203556051567283313, 60309617786895935430487693515284005771121303011227794353379094104664510721817, 630144394797125928184734966161232222262163418584321928850949735421050962746390854316963071489256753337406921485316432698138881779811797117753093898708737), 'text'))
 gen_message = random.randint(1,  open_key_A[0])
 
 k1, S1 = send_key(secret_key_A, open_key_B, gen_message)
@@ -216,9 +233,33 @@ print("\n")
 k, S = recieve_key(secret_key_B, open_key_A, k1, S1)
 print("декодований ключ:", k)
 print("декодований підпис:", S)
+print("\n")
+#Перевірка на сайті
+#Завдання 1 decrypt
+encrypted_hex = "759D45E794DF6B83C6B9E350E328BF54EB62B70E9CA301A6D5012967D6AF906E99311B2543BE558BA8BD613A3E21D2289A9867D54FD5F7707B288C4C3AF83F"
+prv_key = (77000727766915613692786033325637612867113956129398433538854106165276803537433, 1524306868158978166934791472082457035704546613697452758871792947151835510421, 50647741519546448467726053613022965046388372319712948195480205914166565453678195847813747163542620188574742925957946826671064498867729123714425043747073)
+print("decrypted message:", decrypt_rsa(int(encrypted_hex, 16), prv_key, 'text'))
+print("\n")
 
-#msg33 = 12345
-#serv_pub_key = (int("9A3F4094520BA92BEF724072728BA038C54D90478E522CFB6759A31DB0EC19B9", 16), int("10001", 16))
-#encr_serv = encrypt_rsa(msg33, serv_pub_key)
-#zzz = encr_serv
-#print(hex(encr_serv))
+#Завдання 2
+msg33 = 'hello lab4'
+print("оригінальне повідомлення:", msg33)
+serv_pub_key = (int("88CFE8F633B942B446AD21BBB53717A9010A36EBC9C447B8B8BAC8EE1238247B", 16), int("10001", 16))
+encr_serv = encrypt_rsa(msg33, serv_pub_key)
+print("Зашифроване повідомлення:", encr_serv)
+print("Закодоване повідомлення у хексі: ", hex(encr_serv))
+print("\n")
+
+#Завдання 3
+server_sign = (int("053382B2DCE32C2BE22B0A0B6D6B29882055688DDC118266A1E7F4A74EA6775A", 16))
+print("повідомлення підписане сервером: ", server_sign)
+message = "hvost bobra"
+serv_pub_key = (int("88CFE8F633B942B446AD21BBB53717A9010A36EBC9C447B8B8BAC8EE1238247B", 16), int("10001", 16))
+print("перевірка підпису: ", verify_sign(server_sign, message, serv_pub_key))
+
+#Завдання 4
+message_to_sign = "server verify"
+print("оригінальне повідомлення", message_to_sign)
+print(hex(signature(message_to_sign, secret_key_A)))
+print(hex(secret_key_A[0]*secret_key_A[1]))
+#print(hex(secret_key_A[2]))
