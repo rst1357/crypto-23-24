@@ -32,7 +32,6 @@ def MillerRabin(p: int, k: int) -> bool:
     while d % 2 == 0:
         d //= 2; s += 1
 
-
     for _ in range(k):
         isStrongPseudoprime = False
         x = randrange(2, p, 1)

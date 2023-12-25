@@ -2,7 +2,8 @@ from lab4_math import generatePrime, getModuloInverse, HornerPow
 
 
 class RSA:
-    def __init__(self, e: int, length: int) -> None:
+    def __init__(self, e: int, length: int, name: str) -> None:
+        self.name = name
         self.e = e
         self.length = length
         self.n = None
@@ -48,41 +49,8 @@ class RSA:
 
 
     def sendKey(self) -> tuple[int, int]:
-        return (self.n, self.e)
+        return (hex(self.n), self.e)
 
 
     def receiveKey(self, publicKey: tuple[int, int]) -> None:
         self.BPubKey = publicKey
-
-
-if __name__ == "__main__":
-    A = RSA(2 ** 16 + 1, 256)
-    B = RSA(2 ** 16 + 1, 256)
-
-    A.generateKeyPair()
-    B.generateKeyPair()
-
-    A.receiveKey(B.sendKey())
-    APubKeyModulo = A.n
-    while APubKeyModulo > A.BPubKey[0]:
-        A.generateKeyPair()
-        APubKeyModulo = A.n
-
-    B.receiveKey(A.sendKey())
-    print(f"[*] A and B exchanged keys\n[*] A: {A.sendKey()}\nB: {B.sendKey()}\n")
-
-    k = 1337228322
-
-    sig = A.sign(k)
-    print(f"[*] A signed message: {sig}\n")
-    msg = A.encrypt(sig[0]), A.encrypt(sig[1])
-
-    print(f"[*] Message from A to B: {msg}\n")
-
-    print(f"[*] B received message from A: {msg}\n")
-
-    decrypted_msg = B.decrypt(msg[0]), B.decrypt(msg[1])
-
-    print(decrypted_msg)
-
-    print(f"\n[*] Verification: {B.verify(decrypted_msg)}")
