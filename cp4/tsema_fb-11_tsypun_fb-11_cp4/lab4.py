@@ -9,7 +9,11 @@ def main():
     )
 
     ep.startExchange()
-    ep.sendSecret(ep.Alice, ep.Bob, 133712345228)
+    enc = ep.sendKey(ep.Bob.getPubKey(), ep.Alice, ep.Bob, 1337229322)
+
+    key = ep.receiveKey(ep.Alice.getPubKey(), ep.Alice, ep.Bob, enc)
+
+    print(key)
 
 
 if __name__ == "__main__":

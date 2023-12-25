@@ -10,14 +10,10 @@ class RSA:
         self._p = None
         self._q = None
         self._d = None
-        self.BPubKey = None
 
 
-    def encrypt(self, m: int) -> int:
-        if self.BPubKey:
-            n, e = self.BPubKey
-            return HornerPow(m, e, n)
-        raise Exception("Need to get a public key")
+    def encrypt(self, m: int, pubKey: tuple[int, int]) -> int:
+        return HornerPow(m, pubKey[1], pubKey[0])
 
 
     def decrypt(self, c: int) -> int:
@@ -27,8 +23,8 @@ class RSA:
 
 
     def generateKeyPair(self) -> None:
-        self._p = generatePrime(self.length)
-        self._q = generatePrime(self.length)
+        self._p = generatePrime(self.length // 2 - 1)
+        self._q = generatePrime(self.length // 2 - 1)
 
         phi = (self._p - 1) * (self._q - 1)
         self._d = getModuloInverse(self.e, phi)
@@ -41,16 +37,10 @@ class RSA:
         raise Exception("Need to generate a key")
 
 
-    def verify(self, signature: tuple[int, int]) -> bool:
+    def verify(self, signature: tuple[int, int], pubKey: tuple[int, int]) -> bool:
         m, s = signature
-        if self.BPubKey:
-            return m == HornerPow(s, self.BPubKey[1], self.BPubKey[0])
-        raise Exception("Need to get a public key")
+        return m == HornerPow(s, pubKey[1], pubKey[0])
 
 
-    def sendKey(self) -> tuple[int, int]:
-        return (self.n, self.e)
-
-
-    def receiveKey(self, publicKey: tuple[int, int]) -> None:
-        self.BPubKey = publicKey
+    def getPubKey(self) -> tuple[int, int]:
+        return self.n, self.e
