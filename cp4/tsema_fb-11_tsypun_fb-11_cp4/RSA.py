@@ -49,7 +49,7 @@ class RSA:
 
 
     def sendKey(self) -> tuple[int, int]:
-        return (hex(self.n), self.e)
+        return (self.n, self.e)
 
 
     def receiveKey(self, publicKey: tuple[int, int]) -> None:
