@@ -1,4 +1,5 @@
 from random import randrange
+from typing import Optional
 
 
 def gcd(a, b):
@@ -15,27 +16,35 @@ def trialDiv(p: int) -> bool:
     return True
 
 
+def HornerPow(base: int, power: int, modulo: int) -> int:
+    bin_rep = str(bin(power))[2:]
+    res = 1
+    for i in range(len(bin_rep)):
+        res = (res ** 2) % modulo
+        if bin_rep[i] == "1":
+            res = (res * base) % modulo
+
+    return res
+
+
 def MillerRabin(p: int, k: int) -> bool:
     s, d = 0, p - 1
     while d % 2 == 0:
         d //= 2; s += 1
 
-    x_old = 0
+
     for _ in range(k):
         isStrongPseudoprime = False
         x = randrange(2, p, 1)
-        while x == x_old:
-            x = randrange(2, p, 1)
-        x_old = x
 
         if gcd(x, p) > 1:
             return False
         
-        if (xd := pow(x, d, p)) == 1 or xd == p - 1:
+        if (xd := HornerPow(x, d, p)) == 1 or xd == p - 1:
             continue
         else:
             for _ in range(1, s):
-                if (xd := pow(xd, 2, p)) == p - 1:
+                if (xd := HornerPow(xd, 2, p)) == p - 1:
                     isStrongPseudoprime = True
                     break
                 elif xd == 1:
@@ -60,3 +69,25 @@ def generatePrime(length: int):
             if MillerRabin(m0 + 2*i, 20):
                 return m0 + 2*i
             
+
+def extEuclid(a: int, b: int) -> tuple[int, int, int]:
+    prev_r, r = a, b
+    prev_u, u = 1, 0
+    prev_v, v = 0, 1
+
+    while r:
+        q = prev_r // r
+        prev_r, r = r, prev_r - q * r
+        prev_u, u = u, prev_u - q * u
+        prev_v, v = v, prev_v - q * v
+
+    return prev_r, prev_u, prev_v
+
+
+def getModuloInverse(a: int, mod: int) -> Optional[int]:
+    gcd, inverse, _ = extEuclid(a, mod)
+
+    if gcd == 1:
+        return inverse % mod
+
+    return None
