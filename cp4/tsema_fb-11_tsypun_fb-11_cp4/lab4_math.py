@@ -90,3 +90,15 @@ def getModuloInverse(a: int, mod: int) -> Optional[int]:
         return inverse % mod
 
     return None
+
+
+def os2ip(msg: str, encoding='utf-8') -> int:
+    return int.from_bytes(msg.encode(encoding), byteorder='big')
+
+
+def i2byte(msg: int) -> bytes:
+    return msg.to_bytes((msg.bit_length() + 7) // 8, byteorder='big')
+
+
+def i2osp(msg: int, encoding='utf-8') -> str:
+    return i2byte(msg).decode(encoding)
