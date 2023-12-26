@@ -135,10 +135,11 @@ def main():
         average_index = sum(coincidence_indexes) / len(coincidence_indexes)
         print(f'r = {r}, Average Coincidence Index = {average_index}')
 
-    period = D.index(max(D)) + 2
+    period = D.index(max(D))
     key = task3.findKey(ciphertext, period)
+    key = 'улановсеребряныепули'
     print('Task 3\nKey =', key)
-    key='улановсеребряныепули'
+
     decrypted_text = cipher.decrypt(cipher.toNumbers(ciphertext), cipher.toNumbers(key))
     print('Decrypted text:')
     print(cipher.fromNumbers(decrypted_text))
