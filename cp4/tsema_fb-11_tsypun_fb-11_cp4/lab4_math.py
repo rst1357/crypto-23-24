@@ -1,5 +1,6 @@
 from random import randrange
 from typing import Optional
+from math import log
 
 
 def gcd(a, b):
@@ -58,7 +59,11 @@ def MillerRabin(p: int, k: int) -> bool:
 def generatePrime(length: int):
     while True:
         n = 2 ** length
-        x = randrange(n, 2*n - 2)
+
+        if n > 396738:
+            x = randrange(n, int(n + n/(25 * ((log(n)) ** 2))) + 1)
+        else:
+            x = randrange(n, 2*n - 2)
         m0 = x if x % 2 != 0 else x + 1
 
         for i in range(0, int((2*n - 2 - m0)/2)):
