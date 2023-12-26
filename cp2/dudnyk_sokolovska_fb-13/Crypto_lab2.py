@@ -4,6 +4,7 @@ from collections import defaultdict
 from random import choice
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import List
 
 alphabet = "абвгдежзийклмнопрстуфхцчшщъыьэюя"
 #           01234567890123456789012345678901
@@ -65,6 +66,21 @@ def get_I(text:str, alphabet:str = alphabet):
         return 0
     return sum([(letters_frequency[i] * (letters_frequency[i] - 1)) for i in letters_frequency]) / denominator
 
+
+def get_I_statistics(encrypted_text_files: List[str], alphabet: str = alphabet):
+    vals = {}
+
+    for file_name in encrypted_text_files:
+        text = process_text(file_name)
+        nums = re.findall(r'\d+', file_name)
+        num = ""
+        for n in nums:
+            num += n
+        current_I = get_I(text)
+        vals[num] = current_I
+    print(vals)
+
+
 def get_keys_I(text:str, alphabet:str = alphabet):
     keys_ci = defaultdict(int)
     for r in range(2, len(alphabet)):
@@ -95,40 +111,53 @@ def get_MI(frequency:dict, text:str):
     return sum([(val / len(text))**2 for val in frequency.values()])
 
 plain_text = process_text("text.txt")
-# text_to_decrypt = process_text("task.txt")
+text_to_decrypt = process_text("task.txt")
 
 # шифрування - тести з довільними ключами
-keys = {"ня":2, "мур":3, "лоля":4, "чайник":5, "оставьнадежду":13}
+keys = {"ня":2, "мур":3, "лоля":4, "чайник":6, "оставьнадежду":13}
+encrypted_texts = []
 
 for key, value in keys.items():
     encryption(plain_text, f'{key}', f'output_encrypted_test_{value}.txt')
+    encrypted_texts.append(f'output_encrypted_test_{value}.txt')
+
     file = open(f'output_encrypted_test_{value}.txt', "rt", encoding='UTF-8')
     text_to_decrypt = file.read()
+    # print(f'{value}:  {get_I(text_to_decrypt)}')
     get_keys_I(text_to_decrypt)
-#     decryption(text_to_decrypt, f'{key}', f'output_decrypted_test_{value}.txt')
+    decryption(text_to_decrypt, f'{key}', f'output_decrypted_test_{value}.txt')
 
 # test_text = process_text("output_encrypted_test_")
 # get_keys_I()
-
-
+# print(encrypted_texts)
 
 # індекс відповідності - тести
 # for key, value in keys.items():
-# print(f'оригінальний текст: I = {get_I(plain_text)}')
-# test_ci = process_text('test_outputs\\output_encrypted_test_2.txt')
-# print(get_I(test_ci))
+#    print(f'оригінальний текст: I = {get_I(plain_text)}')
+#   test_ci = process_text('test_outputs\\output_encrypted_test_2.txt')
+#   print(get_I(test_ci))
 
-# # # математичне очікування
-# # print(f'MI = {get_MI(frequency(text_to_decrypt), text_to_decrypt)}')
+# # математичне очікування
+# print(f'MI = {get_MI(frequency(text_to_decrypt), text_to_decrypt)}')
 
-# # індекс відповідності - oh shit, here we go again
-# get_keys_I(text_to_decrypt)
+# індекс відповідності - oh shit, here we go again
+get_keys_I(text_to_decrypt)
 
-# # ключ
-# print(get_key(text_to_decrypt, 12))
+# ключ
+print(get_key(text_to_decrypt, 12))
 
 # FINALLLLLLLLYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
-# decryption(text_to_decrypt, "вшебспирбуря", "output_decrypted_test.txt")
+decryption(text_to_decrypt, "вшебспирбуря", "output_decrypted_test.txt")
 
-# залежність між довжиною ключа та інлексом відповідності
-# оновити протокол
+# залежність між довжиною ключа та індексом відповідності шифротексту
+
+vals = {2:0.044370781512317124, 3:0.04186795491143317, 4:0.039116730051050125, 6:0.03451194024737041, 12:get_I(text_to_decrypt), 13:0.034212149244526674}
+key_lengths = list(vals.keys())
+key_Is = list(vals.values())
+
+plt.plot(key_lengths, key_Is)
+plt.title("співставлення довжин ключів та їхіндексів відповідності у зашифрованих текстах")
+plt.xlabel("довжини ключів")
+plt.ylabel("індекс відповідності шифротексту")
+plt.xticks(key_lengths)
+plt.show()
