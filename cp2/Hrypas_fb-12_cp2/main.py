@@ -2,16 +2,10 @@ import collections
 from numpy import inf
 
 
-
-
-
-
-
 def GetProbability(Filename, Alphabet):
     File = open(Filename, "r")
-    RawText = File.read().lower()
+    RawText = File.read().replace("\n","").lower()
     RawText = RawText.replace('ё','е')
-    RawText = RawText.replace('ъ','ь')
 
     TextList = [i for i in RawText if i in Alphabet]
 
@@ -79,36 +73,31 @@ def find_D(text, alphabet, step):
     return D
 
 def get_vigenere_prob(cyphertext, alphabet, step, letter_count):
-    letter_count = dict(sorted(letter_count.items(), key = lambda x: x[1], reverse = True))
-    key = []
-    splitted_text = split_text(cyphertext, step)
-    cyphertext_letter_count = {}
-    popular_letter = alphabet[0]
+    letter_array = []
     popular_letters = []
+    result = []
+    for i in range(step):
+        for j in range(i, len(cyphertext), step):
+                letter_array.append(cyphertext[j])
+        popular_letters.append(letter_array)
+        letter_array = []
+    for i in popular_letters:
+        result.append(dict(collections.Counter(i)))
+    # print(result)
 
-    for part in splitted_text:
-        for letter in alphabet:
-            cyphertext_letter_count[letter] = part.count(letter)
-
-
-        for i in cyphertext_letter_count.keys():
-            if cyphertext_letter_count[i] > cyphertext_letter_count[popular_letter]:
-                popular_letter = i
-        cyphertext_letter_count = dict(sorted(cyphertext_letter_count.items(), key = lambda x: x[1], reverse=True))
-        popular_letters.append(cyphertext_letter_count)
-        key.append(alphabet[(alphabet.index(popular_letter) - alphabet.index('о')) % (len(alphabet) )])
-
-
-    return popular_letters
+    return result
 
 
 def get_vigenere_key(cleartext_letter_prob, cyphertext_letter_prob, alphabet):
 
 
     key = ""
-
+    print(len(cyphertext_letter_prob))
     for i in cyphertext_letter_prob:
-        key += alphabet[(alphabet.index(list(i.keys())[0]) - alphabet.index('о')) % len(alphabet)]
+
+        i = sorted(i.items(), key=lambda x:x[1], reverse=True)
+    
+        key += alphabet[(alphabet.index(i[0][0] ) - 14) % len(alphabet)]
 
 
     print("looks like your key is: ")
@@ -157,7 +146,8 @@ def decrypt_vigenere(cyphertext, alphabet, key):
 
 
 def main():
-    alphabet = ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ы', 'ь', 'э', 'ю', 'я', 'ъ']
+    alphabet = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
+    alphabet = [i for i in alphabet]
     filename = "cleartext.txt"
     key2 = "из"
     key3 = "воз"
@@ -166,7 +156,7 @@ def main():
     key_big = "чашкаиложкаичай"
     key_big_big = "оченьнеимовернобольшойключ"
     cyphertext = vigenere_encrypt(filename, "test", key_big_big, alphabet, print_out=False)
-    print(compliance_index(cyphertext, alphabet))
+
     with open(filename, "r") as file:
         text = file.read()
 
@@ -174,8 +164,6 @@ def main():
     text = [i for i in text if i in alphabet]
     text=  "".join(text)
     print("real compl: ",compliance_index(text, alphabet))
-    key2_splitted = split_text(cyphertext, 2)
-    print(compliance_index(key2_splitted[1], alphabet))
 
 
     letter_probability = GetProbability(filename, alphabet)
@@ -184,17 +172,22 @@ def main():
 
     with open("cypher.txt", "r") as file:
         work_text = file.read()
+        work_text = work_text.replace("\n","").lower()
+        work_text= work_text.replace('ё','е')
 
+    for i in range(1,31):
+        key2_splitted = split_text(work_text, i)
+        print(f"{i}: ",compliance_index(key2_splitted[0], alphabet))
 
     work_text = [i for i in work_text if i in alphabet]
-
+    # print(work_text)
     choise =  ""
     while choise != "-":
-        testshit = get_vigenere_prob(work_text, alphabet, 14, letter_probability)
-        key = get_vigenere_key(letter_probability, testshit, alphabet)
+        prob = get_vigenere_prob(work_text, alphabet, 14, letter_probability)
+        key = get_vigenere_key(letter_probability, prob, alphabet)
         choise = input("to print small part of text enter p, to continue enter c, to exit enter -: ")
         if choise == "p":
-            decrypt_vigenere(work_text[:len(key)], alphabet, key)
+            decrypt_vigenere(work_text, alphabet, key)
         if choise == "c":
             continue
 
@@ -203,9 +196,6 @@ def main():
 
     return
  
-
-
-
 
 
 

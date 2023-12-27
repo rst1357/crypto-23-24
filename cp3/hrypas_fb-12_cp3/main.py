@@ -173,9 +173,10 @@ def affine_bigram_dec(filename, alphabet, good_bigrams):
 
 def main():
 
-
+    
     alphabet = ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',  'ь', 'ы', 'э', 'ю', 'я', ]
-
+    bigr = get_bigrams("karam.txt", alphabet)
+    print(bigr.most_common(5))
     good_bigrams = ['то', 'ен', 'но', 'ст', 'на']
 #    good_bigrams = ['то', 'ен', 'но', 'ст', 'на', 'ка', 'ко']
 #    affine_bigram_dec("test_v15.txt", alphabet, good_bigrams)
@@ -190,7 +191,9 @@ def main():
 #    with open("cleartext_enc.txt", 'w') as file:
 #        file.write(enc_raw)
 #    print(affine_bigram_dec_text(enc_raw, 643, 3, alphabet ))
-    affine_bigram_dec("v7.txt", alphabet, good_bigrams)
+    with open("v15.txt", "r") as file:
+        print("cyphertext: ", file.read()[:0x30])
+    affine_bigram_dec("v15.txt", alphabet, good_bigrams)
 
 
 
