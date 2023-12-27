@@ -94,36 +94,32 @@ def send_msg(received):
     decrypt_msg = Decrypt(encrypt_msg, received)
     print(f'Розшифроване повідомлення - {to_hex(decrypt_msg)}')
 
-def sign(sender):
-    M = generate_msg(sender.n - 1)
+def sign(sender, M):
     signature = pow(M, sender.d, sender.n)
     return [M, signature]
 
 def verify(M, sign, sender):
     if M == pow(sign, sender.e, sender.n):
-        print('Повідомлення не спотворене')
-    else:
-        print('Усе пропало')
+        return True
+    return False
 
 def send_key(user1, user2):
     while user1.n > user2.n:
         user1.generate_key()
     if not user1.k:
         user1.k = random.randint(1, user1.n)
-    k1 = pow(user1.k, user2.e, user2.n)
-    S = pow(user1.k, user1.d, user1.n)
+    k1 = Encrypt(user1.k, user2)
+    S = sign(user1, user1.k)[1]
     print(f'k - {to_hex(user1.k)}\nS - {to_hex(S)}')
-    S1 = pow(S, user2.e, user2.n)
+    S1 = Encrypt(S, user2)
     return [k1, S1]
 
 def receive_key(user1, user2, signed):
     k1, S1 = signed
-    k = pow(k1, user2.d, user2.n)
-    S = pow(S1, user2.d, user2.n)
-    if k == Encrypt(S, user1):
-        print('Автентифікація пройдена успішно')
-    else:
-        print('Не пощастило')
+    k = Decrypt(k1, user2)
+    S = Decrypt(S1, user2)
+    return verify(k, S, user1)
+
 
 
 
@@ -183,9 +179,13 @@ def main():
             for u in users:
                 if u.name == name:
                     sender = u
-            M, signature = sign(sender)
+            msg = generate_msg(u.n)
+            M, signature = sign(sender, msg)
             print(f'Повідомлення - {to_hex(M)}\nПідпис - {to_hex(signature)}')
-            verify(M, signature, sender)
+            if verify(M, signature, sender):
+                print('Підпис успішно перевірено')
+            else:
+                print('Повідомлення спотворене')
         elif action == '5':
             name1 = input("Перший користувач:")
             for u in users:
@@ -197,7 +197,10 @@ def main():
                     b = u
             temp = send_key(a,b)
             print(f"k1 - {to_hex(temp[0])}\nS1 - {to_hex(temp[1])}")
-            receive_key(a, b, temp)
+            if receive_key(a, b, temp):
+                print('Секретний ключ підтверджено')
+            else:
+                print('Спробуйте ще раз...')
         else:
             temp = False       
 
