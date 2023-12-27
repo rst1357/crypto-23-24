@@ -161,10 +161,9 @@ def decipher(text: str, alphabet: str = alphabet):
 
                 decrypted_text = ''
 
-                for num in decrypted_nums:
-                    l1 = num // len(alphabet)
-                    l2 = num % len(alphabet)
-                    bigram = alphabet[l1] + alphabet[l2]
+                decrypted_bigrams = decode_to_bigram(decrypted_nums)
+                # print(decrypted_bigrams)
+                for bigram in decrypted_bigrams:
                     decrypted_text += bigram
 
                 if check_text(decrypted_text):
