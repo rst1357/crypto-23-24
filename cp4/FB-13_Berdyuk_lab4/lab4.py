@@ -4,6 +4,22 @@ import re
 import math
 import random
 
+def stepin(x, a, n):
+    arr_a = []
+    while (a!=0):
+        arr_a.insert(0, a%2)
+        a = a//2
+    y = 1
+    for i in range(0, len(arr_a)):
+        y = (y*y)%n
+        if (arr_a[i]==1):
+            y = (y*x)%n
+        else:
+            y = y%n
+    return y
+
+
+
 def evclid(a, b):
     u, u_temp, v, v_temp = 1, 0, 0, 1
     while (b!=0):
@@ -27,9 +43,16 @@ def rivnyanya(a, b, n):
         all_x.append(x_temp)
     return all_x
 
+def CheckTriv(n):
+    """ Check if the number is prime using trial division """
 
+    trivial_prime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+    for i in trivial_prime:
+        if (n % i == 0):
+            return False
+    return True
 
-def MillerRabin(n, k):
+def MillerRabin(n, k=20):
     if n == 2:
         return True
 
@@ -53,15 +76,22 @@ def MillerRabin(n, k):
             return False
     return True
 
+
+def GenerateTriv(n):
+    p = random.getrandbits(n)
+    if (CheckTriv(p)==True):
+        if (MillerRabin(p, 20)==True):
+            return p
+        else:
+            return  GenerateTriv(n)
+    else:
+        return GenerateTriv(n)
+
 def GenerateQP(n):
-    p = random.randint(n, 2*n-2)
-    while(MillerRabin(p, 20)!=True):
-        p = random.randint(n, 2*n-2)
+    p = GenerateTriv(n)
 
-    q = random.randint(n, 2*n-2)
-    while (MillerRabin(q, 20) != True):
-        q = random.randint(n, 2*n - 2)
-
+    q = GenerateTriv(n)
+    """
     i = 1
     p = 2*i*p+1
     while (MillerRabin(p, 20)!=True):
@@ -69,10 +99,11 @@ def GenerateQP(n):
         p = 2 * i * p + 1
 
     j = 1
-    q = 2 * j * p + 1
+    q = 2 * j * q + 1
     while (MillerRabin(q, 20) != True):
         j = j + 1
         q = 2 * j * q + 1
+    """
 
     return (p, q)
 
@@ -97,8 +128,8 @@ def Decrypt(text, d, n):
     return m
 
 def Sign(text, d, n):
-    s = Encrypt(text, d, n)
-    return (text, s)
+    s = Decrypt(text, d, n)
+    return s
 
 def Verify(m, s, e, n):
     if (m==pow(s, e, n)):
@@ -107,18 +138,19 @@ def Verify(m, s, e, n):
         return False
 
 def SendKey(k, n, n1, e1, d):
-    k1 = pow(k, e1, n1)
-    s = pow(k, d, n)
-    s1 = pow(s, e1, n1)
+    k1 = Encrypt(k, n1, e1)
+    s = Sign(k, d, n)
+    s1 = Encrypt(s, n1, e1)
     return (k1, s1)
 
 def ReceiveKey(k1, s1, d1, n, e, n1):
-    k = pow(k1, d1, n1)
-    s = pow(s1, d1, n1)
-    if (k==pow(s, e, n)):
+    k = Decrypt(k1, d1, n1)
+    s = Sign(s1, d1, n1)
+    if (Verify(k, s, e, n)):
         return k
     else:
         return 'Not verify'
+
 
 """print(pow(6,3)%7)
 x = GenerateKayPair()
@@ -133,32 +165,58 @@ print(Encrypt(37, n, e))
 num = Encrypt(37, n, e)
 print(Decrypt(num,d1, n))"""
 
+
+
+print(pow(7, 8, 11))
+print(stepin(7, 8, 11))
+print(MillerRabin(997))
+g = GenerateQP(256)[0]
+print(g)
+print(len(bin(g))-2)
+nt = int("A5AF350F2DEBA38E405F663435CD4A2CF1F949AFF52BB09BF93DC4E0E8C4EFD7", 16)
+et = int("10001", 16)
+M = "Hello"
+if not isinstance(M, int):
+    M = int.from_bytes(M.encode('utf-8'), byteorder='big')
+print(Encrypt(M, nt, et))
+print(hex(Encrypt(M, nt, et)))
+
+print('Abonen A generate key...')
 #A abonent
-x_a = GenerateKayPair(128)
+x_a = GenerateKayPair(265)
 public_a = x_a[0]
 privat_a = x_a[1]
 n = public_a[0]
 e = public_a[1]
 d = privat_a[2][0]
 print(n, e, d)
+print(len(bin(n))-2)
 
+print('Abonen B generate key...')
 #B abonent
-x_b = GenerateKayPair(129)
+x_b = GenerateKayPair(265)
 while (x_b[0][0]<n):
-    x_b = GenerateKayPair(129)
+    x_b = GenerateKayPair(265)
 public_b = x_b[0]
 privat_b = x_b[1]
 n1 = public_b[0]
 e1 = public_b[1]
 d1 = privat_b[2][0]
 print(n1, e1, d1)
+print((len(bin(n1))-2))
 
+print('Abonen A encrypt message...')
 #A abonent
 k = int(input('A number'))
 message_a = SendKey(k, n, n1, e1, d)
+print(message_a)
 
+print('Abonen B decrypt message...')
 #B abonent
 encrypt_a = ReceiveKey(message_a[0], message_a[1], d1, n, e, n1)
 print(encrypt_a)
 
-print(message_a)
+
+
+
+
