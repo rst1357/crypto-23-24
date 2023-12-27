@@ -3,16 +3,19 @@ from math import gcd
 from typing import List
 from itertools import combinations
 
+# ВЕРСІЯ КОДУ ДЛЯ МОГО СОНЕЧКА, АЛЯРМ АЛЯРМ
 
 frequent_bigrams = ["ст", "но", "то", "на", "ен"]
 # ["то", "он", "на", "не", "по"]
 alphabet = "абвгдежзийклмнопрстуфхцчшщыьэюя"
 #           0123456789012345678901234567890 -> 31
-non_tipical_bigrams = ["оь", "йы", "йъ", "йь", "эь", "ьь", "зь", "оы"]
+non_tipical_bigrams = ["оь", "йц", "йш", "ъй", "йь", "йю", "йя", "щй", "ьй", "эь", "ыа", "щю"
+                       "гй", "фг", "йй", "ьь", "кы", "зщ", "йь", "оы", "рц" ]
 
 
 # from lab1
 
+#  тут просто отримуємо словар із біграмами та їхніми частотами в тексті. біграми беремо такі що не персікаються
 def frequency_bigrams(text:str, stepUse:bool = False):
     step = 2 if stepUse else 1
     bigrams = defaultdict(int)
@@ -21,6 +24,7 @@ def frequency_bigrams(text:str, stepUse:bool = False):
         bigrams[bigram] += 1
     return bigrams
 
+# тут обробляємо текст у зручний для нас формат
 def process_text(file_name:str):
     with open(file_name, "rt", encoding='utf-8') as file:
         text = file.read().lower().replace("\n", "").replace("ё", "е").replace(" ", "")
@@ -29,15 +33,16 @@ def process_text(file_name:str):
             text = text.replace(symbol, "")
     return text
 
-# 2
+# 3
 # for gcd: gcd(a, b)
-
 def check_reversed_exist(num:int, modulo:int):
 
     """ шукаємо обернений елемент """
 
     if gcd(num, modulo) == 1: 
+        # умова існування оберненого елемента
         for i in range(1, modulo):
+            # перебираємо числа від 1 до modulo, і знаходимо таке, щоб при множенні на нього за модулем отримали 1
             if (num * i) % modulo == 1:
                 return i
         
@@ -50,10 +55,12 @@ def solve_linear_mod_expression(a:int, b:int, modulo:int):
 
     res = []
     if gcd(a , modulo) == 1:
+        # лише один корінь => просто знаходимо обернені
         res.append(pow(a,-1,modulo) * b % modulo)
         # print(f"Рівняння {a}x = {b} mod({modulo}) : x =", res)
         return res
     elif gcd(a, modulo) > 1:
+        # це ознака того що коренів більше ніж 1, якщо вони є
         d = gcd(a, modulo)
         # Перевірка на кратність b до НСД(a, modulo) та на можливість знайти обернений елемент
         if b % d != 0 or pow(a // d, -1, modulo // d) == None:  
@@ -80,8 +87,11 @@ def encode_to_num(bigrams:List[str], alphabet:str = alphabet):
 
     numsX = []
     for bigram in bigrams:
+        # беремо першу літеру біграми
         a = bigram[0]
+        # друга літера біграми
         b = bigram[1]
+        # знаходимо індекс кожної літери в алфавіті (на якій позиції вона там стоїть) та обчислюємо номер біграми
         numsX.append(alphabet.index(a) * len(alphabet) + alphabet.index(b))
     return numsX
 
@@ -103,14 +113,21 @@ def get_keys(text:str, frequent_bigrams:List[str] =frequent_bigrams, alphabet:st
 
     """шукаємо можливі ключі"""
 
+    # alphabet зазнаено на початку
     mod = len(alphabet)**2
+    # сортуємо біграми за їхніми частотами у спадному порядку
     sorted_encrypted = sorted(frequency_bigrams(text).items(), key=lambda x: x[1], reverse=True)
+    # беремо 5 перших біграм
     top_encrypted = list(dict(sorted_encrypted[:5]).keys())
     # print(top_encrypted)
     # print(frequent_bigrams)
+
+    # кодуємо біграми в номери
+    # frequent_bigrams зазначено на початку - це найчастіші біграми нормального тексту
     X = encode_to_num(frequent_bigrams)
     Y = encode_to_num(top_encrypted)
 
+    # усі можливі комбінації шифрованих та нормальних біграм
     X_combinations = list(combinations(range(len(X)), 2))
     Y_combinations = list(combinations(range(len(Y)), 2))
     # print(X)
@@ -120,16 +137,24 @@ def get_keys(text:str, frequent_bigrams:List[str] =frequent_bigrams, alphabet:st
 
     for x in X_combinations:
         for y in Y_combinations:
+            # перебираємо всі можливі комбінації біграм
+            # x1, x2, y1, y2 - нормальні та шифровані біграми, відповіно, а точніше їх номери
             x1 = X[x[0]]
             x2 = X[x[1]]
             y1 = Y[y[0]]
             y2 = Y[y[1]]
 
-            if x1 == y1 or x2 == y2 : continue
+            # перевіряємо що біграми не співпадали
+            if x1 == y1 and x2 == y2 : continue
             # print(x1, x2, y1, y2)
 
+            # для кінцевого розшифрування тексту використовуємо рівняння x = a^(-1) * (y-b) mod alphabet^2 тому
+            # щоб отримати множники a і b для розшифрування, ми їх тут шукаємо
             a_keys = solve_linear_mod_expression(x1 - x2, y1 - y2, mod)
+
             # print("a = ", a_keys, ", x1 = ", x1, ", x2 = ", x2, ", y1 = ", y1, ", y2 = ",  y2)
+
+            # для кожного a може бути дофіга b, може бути і одне, але ми враховуємо всі варіанти
             b_keys = []
             for a in a_keys:
                 b = (y1 - a*x1) % mod
@@ -144,29 +169,38 @@ def decipher(text: str, alphabet: str = alphabet):
     """ розшифровуємо текст"""
 
     mod = len(alphabet)**2
+    # отримує можливі ключі
     keys = get_keys(text)
+    # просто нумеруємо біграми в зашифрованому тексті
     numerated_bigrams = encode_to_num(list(frequency_bigrams(text).keys()))
     
     for a, b_vals in keys.items():
+        # перевіряємо щоб у нашого a був обернений елемент, інакше відкидаємо
+        if check_reversed_exist(a, mod) is None: continue
         for b in b_vals:
-            if check_reversed_exist(a, mod) is None: continue
 
+            # майбутні розшифровані номери біграм, які ще потім будемо переводити в буквенний вигляд
             decrypted_nums = []
 
             for y in numerated_bigrams:
+                # знаходимо розшифрований номер біграми і додаємо в список
                 x = (pow(a, -1, mod) * (y - b)) % mod
                 decrypted_nums.append(x)
             # print(decrypted_nums)
 
-                decrypted_text = ''
+            # майбутній розшифрований текст
+            decrypted_text = ''
+
+            # я ще намагалася просто в біграми перевести, не викоистовувати отой наступний цикл, 
+            # але не робе все одно, можеш його теж потім їй показати
 
             decrypted_bigrams = decode_to_bigram(decrypted_nums)
             # print(decrypted_bigrams)
-            # print(decrypted_bigrams)
             for bigram in decrypted_bigrams:
                 decrypted_text += bigram
-            # print(decrypted_text)
 
+            # тут перевіряємо чи текст є змістовним методом пошуку нетипових біграм для мови
+            # їх перелік є зверху також
             if check_text(decrypted_text):
                 print("Текст змістовний, створено файл")
                 print(f"Ключі: a = {a}, b = {b}")
