@@ -1,13 +1,14 @@
 from re import sub
 
 ALPHABET = 'абвгдежзийклмнопрстуфхцчшщьыэюя'
-forbidden_bigrams = ['аь','ьь','ыы','ыь']
+forbidden_bigrams = ['аь', 'ьь', 'ыы', 'ыь']
 
 
 def read_text(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         file_content = f.read()
     return file_content
+
 
 def clean_text(filepath):
     text = read_text(filepath)
@@ -16,11 +17,14 @@ def clean_text(filepath):
     text = sub("\s+", "", text)
     return text
 
+
 def save_text(filepath, text):
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(text)
 
+
 #save_text("encrypted_text.txt", clean_text("09_utf.txt"))
+
 
 def count_bigrams(filepath, step=2):    # Підрахунок біграм
     text = read_text(filepath)
@@ -34,6 +38,7 @@ def count_bigrams(filepath, step=2):    # Підрахунок біграм
     bigram_dict = dict(sorted(bigram_dict.items(), key=lambda x: x[1], reverse=True))  # Сортування за значеннями ключів
     return bigram_dict
 
+
 def extended_euclid(a, b):   # Розширений алгоритм Евкліда
     """ Повертає d=НСД(x,y) і x, y такі, що ax + by = d """
     if b == 0:
@@ -41,12 +46,14 @@ def extended_euclid(a, b):   # Розширений алгоритм Евклі�
     d, x, y = extended_euclid(b, a % b)
     return d, y, x - (a // b) * y
 
+
 def mod_inverse(a, m):   # Обернене за модулем
     gcd, x, y = extended_euclid(a, m)
     if gcd == 1:
-        return (x % m + m) % m
+        return x % m
     else:
         return None
+
 
 def solve_equation(x1, x2, y1, y2):
     inverse = mod_inverse(x1 - x2, (len(ALPHABET) * len(ALPHABET)))
@@ -85,6 +92,7 @@ def affine_decrypt(encrypted_text, keys):
 if __name__ == "__main__":
 
     encrypted_bigrams_frequency = list(count_bigrams("encrypted_text.txt").keys())[:5]  # 5 найчастіших біграм шифртексту
+    print(encrypted_bigrams_frequency)
     most_frequent_bigrams = ["ст", "но", "то", "на", "ен"]  # 5 найчастіших біграм російської мови
 
     x = bigram_to_num(most_frequent_bigrams)
@@ -97,7 +105,7 @@ if __name__ == "__main__":
                 for y2 in y:
                     if x1 != x2 and y1 != y2:
                         res = solve_equation(x1, x2, y1, y2)
-                        if res:
+                        if res is not None and res not in keys:
                             keys.append(res)
 
     affine_decrypt(read_text('encrypted_text.txt'), keys)
