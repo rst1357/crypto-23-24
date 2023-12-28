@@ -49,31 +49,35 @@ class rsa_box:
 
             
     def generate_keys(self):
-        while(1):
-            p = random.randint(2**int(self.key_length/2), (2**(int(self.key_length/2)+1))-1)
-            if p & 1 == 0:
-                p += 1
-            while (self.miller_rabin(p) == False):
-                p += 2
-                print("possible p: ", p)
-            if p < (2**(int(self.key_length/2) + 1) - 1):
+        q = 0
+        p = 0
+        while len(bin(self.n)) != 514 or q + p == 0:
+            while(1):
+                p = random.getrandbits(256)
+                if p & 1 == 0:
+                    p += 1
+                while (self.miller_rabin(p) == False):
+                    p += 2
+                    print("possible p: ", p)
+                if len(bin(p)) == BIT_SIZE/2 + 2:
                     break
-        
-        while(1):
-            q = random.randint(2**int(self.key_length/2), (2**(int(self.key_length/2)+1))-1)
-            if q & 1 == 0:
-                q += 1
-            while (self.miller_rabin(q) == False):
-                q += 2
-                print("possible q: ",q)
-            if q < (2**(int(self.key_length/2) + 1) - 1):
+
+            while(1):
+                q = random.getrandbits(256)
+                if q & 1 == 0:
+                    q += 1
+                while (self.miller_rabin(q) == False):
+                    q += 2
+                    print("possible q: ",q)
+                if len(bin(q)) == BIT_SIZE/2 + 2:
                     break
-        print("possible prime P: ", p)
-        print("possible prime q ", q)
+
+            print("possible prime P: ", p)
+            print("possible prime q ", q)
+                
+    
             
- 
-        
-        self.n = p*q
+            self.n = p*q
         self.phi_n = (q-1)*(p-1)
         self.d = pow(self.e,  -1, self.phi_n)
         if math.gcd(self.e, self.phi_n) != 1:
@@ -128,7 +132,7 @@ class rsa_box:
         print("generated S: ", hex(S))
         S1 = pow(S, self.friend_public_key.e, self.friend_public_key.n)
         print("sending S1: ", hex(S1))
-        print("sending k1: ", hex(k))
+        print("sending k1: ", hex(k1))
         return k1, S1
     
     def RecieveKey(self, k, S1):
