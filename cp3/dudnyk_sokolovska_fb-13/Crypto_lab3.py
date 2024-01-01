@@ -13,7 +13,7 @@ non_tipical_bigrams = ["оь", "йы", "йъ", "йь", "эь", "ьь", "зь", "
 
 # from lab1
 
-def frequency_bigrams(text:str, stepUse:bool = False):
+def frequency_bigrams(text:str, stepUse:bool = True):
     step = 2 if stepUse else 1
     bigrams = defaultdict(int)
     for i in range(0, len(text)-1, step):
@@ -105,7 +105,7 @@ def get_keys(text:str, frequent_bigrams:List[str] =frequent_bigrams, alphabet:st
 
     mod = len(alphabet)**2
     sorted_encrypted = sorted(frequency_bigrams(text).items(), key=lambda x: x[1], reverse=True)
-    top_encrypted = list(dict(sorted_encrypted[:5]).keys())
+    top_encrypted = list(dict(sorted_encrypted[:12]).keys())
     # print(top_encrypted)
     # print(frequent_bigrams)
     X = encode_to_num(frequent_bigrams)
