@@ -89,8 +89,9 @@ def check_text(text):
             return False
     return True
 
-
-with open("C:\\Users\\Vano\\OneDrive\\Рабочий стол\\Uni\\Crypto\\lab3\\07.txt", "r") as file_input:
+file_input = input("Input file: ")
+file_output = input("Output file: ")
+with open(file_input, "r") as file_input:
 
     text = file_input.read()
 print(text)
@@ -126,7 +127,7 @@ unique_keys = list(set(map(tuple, keys)))
 print("Number of candidates:", len(unique_keys))
 print("Result in dec_result.txt file")
 
-with open("C:\\Users\\Vano\\OneDrive\\Рабочий стол\\Uni\\Crypto\\lab3\\dec_result.txt", "w") as file_output:
+with open(file_output, "w") as file_output:
 
     for pair in unique_keys:
         decrypted_text = ""
