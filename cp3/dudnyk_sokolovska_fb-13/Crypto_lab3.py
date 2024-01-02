@@ -13,7 +13,7 @@ non_tipical_bigrams = ["оь", "йы", "йъ", "йь", "эь", "ьь", "зь", "
 
 # from lab1
 
-def frequency_bigrams(text:str, stepUse:bool = False):
+def frequency_bigrams(text:str, stepUse:bool = True):
     step = 2 if stepUse else 1
     bigrams = defaultdict(int)
     for i in range(0, len(text)-1, step):
@@ -65,6 +65,12 @@ def solve_linear_mod_expression(a:int, b:int, modulo:int):
             # print(f"Усі можливі корені для рівняння {a}x = {b} mod({modulo}) : ", res)
             return res
 
+
+# solve_linear_mod_expression(7, 4, 10)
+# solve_linear_mod_expression(6, 1, 10)
+# solve_linear_mod_expression(6, 8, 10)
+
+
 def check_text(text:str, bigrams:List[str] = non_tipical_bigrams):
 
     """перевіряємо на наявність в тексті неможливих поєднань біграм"""
@@ -105,7 +111,7 @@ def get_keys(text:str, frequent_bigrams:List[str] =frequent_bigrams, alphabet:st
 
     mod = len(alphabet)**2
     sorted_encrypted = sorted(frequency_bigrams(text).items(), key=lambda x: x[1], reverse=True)
-    top_encrypted = list(dict(sorted_encrypted[:5]).keys())
+    top_encrypted = list(dict(sorted_encrypted[:12]).keys())
     # print(top_encrypted)
     # print(frequent_bigrams)
     X = encode_to_num(frequent_bigrams)
@@ -149,7 +155,8 @@ def decipher(text: str, alphabet: str = alphabet):
     
     for a, b_vals in keys.items():
         for b in b_vals:
-            if check_reversed_exist(a, mod) is None: continue
+            if check_reversed_exist(a, mod) is None: 
+                continue
 
             decrypted_nums = []
 
@@ -158,7 +165,7 @@ def decipher(text: str, alphabet: str = alphabet):
                 decrypted_nums.append(x)
             # print(decrypted_nums)
 
-                decrypted_text = ''
+            decrypted_text = ''
 
             decrypted_bigrams = decode_to_bigram(decrypted_nums)
             # print(decrypted_bigrams)
@@ -178,9 +185,40 @@ def decipher(text: str, alphabet: str = alphabet):
 
 # (13, 151)
 
+def decipher_v2(text:str, alphabet:str=alphabet): 
+    mod = len(alphabet)**2
+    keys = get_keys(text)
+    numerated_bigrams = encode_to_num(list(frequency_bigrams(text).keys()))
+
+    decrypted_texts = {}    # [keys] : text
+
+    for a, b_vals in keys.items():
+        if check_reversed_exist(a, mod) is None: 
+                continue
+        for b in b_vals:
+            decrypted_nums = []
+
+            for y in numerated_bigrams:
+                x = (pow(a, -1, mod) * (y - b)) % mod
+                decrypted_nums.append(x)
+            
+            decrypted_text = ''
+            decrypted_bigrams = decode_to_bigram(decrypted_nums)
+            # print(decrypted_bigrams)
+            for bigram in decrypted_bigrams:
+                decrypted_text += bigram
+            # print(decrypted_text)
+
+            decrypted_texts[decrypted_text] = [a,b]
+
+    for text, keys in decrypted_texts.items():
+        if check_text(text):
+            a, b = keys[0], keys[1]
+            with open(f"decrypted_texts//decrypted{a}_{b}.txt", "w", encoding="utf-8") as file:
+                    file.write(decrypted_text)
 
 test_text = process_text("01_utf8.txt")
 # get_keys(test_text)
 
-decipher(test_text)
+decipher_v2(test_text)
 # не виходить змістовний текст
