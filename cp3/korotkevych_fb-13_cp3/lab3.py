@@ -90,10 +90,10 @@ def check_text(text):
     return True
 
 
-with open("/home/kali/Desktop/cryptolab3/07.txt", "r") as file_input:
+with open("C:\\Users\\Vano\\OneDrive\\Рабочий стол\\Uni\\Crypto\\lab3\\07.txt", "r") as file_input:
 
     text = file_input.read()
-
+print(text)
 bigrams = count_bigram(text)
 list_bigrams = [key for key, value in bigrams.items()][0:5]
 print("Most frequent bigrams in ciphertext are: ", list_bigrams)
@@ -112,24 +112,21 @@ for i in range(0, 5):
     for j in range(0, 5):
         for k in range(0, 5):
             for l in range(0, 5):
-
-                X1_X2 = (bigrams_lang[i] - bigrams_lang[k]) % m**2
-                Y1_Y2 = (bigrams_text[j] - bigrams_text[l]) % m**2
-                inverse = congruence(X1_X2, Y1_Y2, m**2)
-                #inverse = inverse_elem(X1_X2, m**2)
-                if inverse is not None:
-                    for a in inverse[:20]:
-                    #a = (inverse * Y1_Y2) % m**2
-                        b = (bigrams_text[j] - a*bigrams_lang[i]) % m**2
-                        pair = [a, b]
-                        keys.append(pair)
-
+                if i != k and j != l:
+                    X1_X2 = (bigrams_lang[i] - bigrams_lang[k]) % m**2
+                    Y1_Y2 = (bigrams_text[j] - bigrams_text[l]) % m**2
+                    inverse = congruence(X1_X2, Y1_Y2, m**2)
+                    if inverse is not None:
+                        for a in inverse:
+                            b = (bigrams_text[j] - a*bigrams_lang[i]) % m**2
+                            pair = [a, b]
+                            keys.append(pair)
 
 unique_keys = list(set(map(tuple, keys)))
 print("Number of candidates:", len(unique_keys))
 print("Result in dec_result.txt file")
 
-with open("/home/kali/Desktop/cryptolab3/dec_result.txt", "w") as file_output:
+with open("C:\\Users\\Vano\\OneDrive\\Рабочий стол\\Uni\\Crypto\\lab3\\dec_result.txt", "w") as file_output:
 
     for pair in unique_keys:
         decrypted_text = ""
@@ -139,7 +136,7 @@ with open("/home/kali/Desktop/cryptolab3/dec_result.txt", "w") as file_output:
             bigram = text[i:i + 2]
             if inverse_elem(a, m**2) is not None:
                 X = congruence(a, (bigram_number(bigram[0], bigram[1]) - b) % m**2, m**2)
-                if X is None:
+                if X[0] is None:
                     continue
                 decrypted_text += number_to_bigram(X[0])
                
