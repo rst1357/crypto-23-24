@@ -147,16 +147,16 @@ def decipher_message(C: int, privateKeys: dict):
     res = horner_pow(C, d, n)
     return res
 
-def crypto_sign(M:int, private_keys:dict):
-    S = horner_pow(M, private_keys['d'], private_keys['p'] * private_keys['q'])
+def crypto_sign(M:int, private_keys:dict, open_keys:dict):
+    S = horner_pow(M, private_keys['d'], open_keys['n'])
     return S
 
 def verification(M:int, S:int, open_keys:dict):
     return M == horner_pow(S, open_keys['e'], open_keys['n'])
 
-def send_message(M:int, A_privateKeys:dict, B_openKeys:dict):
+def send_message(M:int, A_openKeys, A_privateKeys:dict, B_openKeys:dict):
     encrypted_M = cipher_message(M, B_openKeys)
-    S = crypto_sign(M, A_privateKeys)
+    S = crypto_sign(M, A_privateKeys, A_openKeys)
     S1 = horner_pow(S, B_openKeys['e'], B_openKeys['n'])
     if encrypted_M and S and S1:
         print("Підписанне повідомлення відправлено успішно!")
@@ -181,10 +181,10 @@ print("messageA:", messageA, f"(length={sys.getsizeof(messageA)})\nmessageB:", m
 A_openKeys, A_secretKeys, B_openKeys, B_secretKeys = generate_pairs_AB()
 
 print(f"\nsending message {messageA} to B")
-encrypted_A, s1a = send_message(messageA, A_secretKeys, B_openKeys)
+encrypted_A, s1a = send_message(messageA, A_openKeys, A_secretKeys, B_openKeys)
 
 print(f"\nsending message {messageB} to A")
-encrypted_B, s1b = send_message(messageB, B_secretKeys, A_openKeys)
+encrypted_B, s1b = send_message(messageB, B_openKeys, B_secretKeys, A_openKeys)
 
 print("\nreceiving message from A:")
 receive_message(encrypted_A, s1a, B_secretKeys, A_openKeys)
