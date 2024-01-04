@@ -67,5 +67,5 @@ if __name__ == "__main__":
                         result = solve_equation(x1, y1, x2, y2)
                         if result:
                             keys.add(result)
-
+    print(len(keys))
     affine_decrypt(text, keys)
