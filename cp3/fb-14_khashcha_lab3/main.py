@@ -1,94 +1,79 @@
 import math
 
 alphabet = 'абвгдежзийклмнопрстуфхцчшщьыэюя'
+modulus = 31 ** 2
 
-def extended_euclid(a, n):
-    if n == 0:
-        return a, 1, 0
-    gcd_res, x1, y1 = extended_euclid(n, a % n)
-    x, y = y1, x1 - (a // n) * y1
-    return gcd_res, x, y
+def gcd_extended(a, b):
+    if b == 0:
+        return (a, 1, 0)
+    else:
+        gcd, x, y = gcd_extended(b, a % b)
+        return (gcd, y, x - (a // b) * y)
 
-def mod_inverse(a, n):
-    if math.gcd(a, n) != 1:
+def calculate_modular_inverse(element):
+    if math.gcd(element, modulus) != 1:
         return None
-    _, x, _ = extended_euclid(a, n)
-    return x % n
+    _, inverse, _ = gcd_extended(element, modulus)
+    return inverse % modulus
 
-def solve_congruence(a, b, n):
-    gcd_res, x, _ = extended_euclid(a, n)
-    if b % gcd_res != 0:
+def compute_congruence_solutions(coeff, constant):
+    gcd_val, inverse, _ = gcd_extended(coeff, modulus)
+    if constant % gcd_val != 0:
         return None
 
-    solution = (x * (b // gcd_res)) % n
-    solutions = [(solution + i * (n // gcd_res)) % n for i in range(gcd_res)]
-    return solutions
+    solution_set = []
+    base_solution = (inverse * (constant // gcd_val)) % modulus
+    for i in range(gcd_val):
+        solution_set.append((base_solution + i * (modulus // gcd_val)) % modulus)
+    return solution_set
 
-def get_top_bigrams(text, gap=1):
-    bigram_frequency = {}
-    for i in range(len(text) - gap):
-        bigram = text[i] + text[i + gap]
-        if bigram not in bigram_frequency:
-            bigram_frequency[bigram] = text.count(bigram)
+def get_frequent_bigrams(text, gap=1):
+    bigrams = [text[i:i+2] for i in range(len(text)-gap)]
+    bigram_freq = {b: bigrams.count(b) for b in set(bigrams)}
+    return sorted(bigram_freq, key=bigram_freq.get, reverse=True)[:5]
 
-    total = sum(bigram_frequency.values())
-    freq_percent = {bigram: count / total for bigram, count in bigram_frequency.items()}
-    sorted_bigrams = sorted(freq_percent.items(), key=lambda item: item[1], reverse=True)
-    return [bigram for bigram, _ in sorted_bigrams[:5]]
+def find_bigram_correspondences(common, observed):
+    return [(c, o) for c in common for o in observed if c != o]
 
-def match_bigrams(expected_bigrams, observed_bigrams):
-    bigram_matches = []
-    for exp in expected_bigrams:
-        for obs in observed_bigrams:
-            if exp != obs:
-                bigram_matches.append((exp, obs))
-    return bigram_matches
-
-def derive_keys(bigram_match):
-    keys = []
-    for b1, b2 in bigram_match:
-        x1 = alphabet.index(b1[0]) * 31 + alphabet.index(b1[1])
-        y1 = alphabet.index(b2[0]) * 31 + alphabet.index(b2[1])
-
-        x2 = alphabet.index(b1[0]) * 31 + alphabet.index(b1[1])
-        y2 = alphabet.index(b2[0]) * 31 + alphabet.index(b2[1])
-
-        solutions = solve_congruence(x1 - x2, y1 - y2, 31 ** 2)
+def extract_possible_keys(bigram_pairs):
+    potential_keys = []
+    for b1, b2 in bigram_pairs:
+        x1, y1 = alphabet.index(b1[0]) * 31 + alphabet.index(b1[1]), alphabet.index(b2[0]) * 31 + alphabet.index(b2[1])
+        solutions = compute_congruence_solutions(x1 - x1, y1 - y1)
         if solutions:
             for sol in solutions:
-                keys.append((sol, (y1 - sol * x1) % (31 ** 2)))
-    return keys
+                potential_keys.append((sol, (y1 - sol * x1) % modulus))
+    return potential_keys
 
-def decipher_text(cipher, key_pair):
-    plain_text = ""
+def decrypt_cipher(cipher, key_pair):
+    decrypted_text = ""
+    inv_key = calculate_modular_inverse(key_pair[0])
+    if inv_key is None:
+        return None
+
     for i in range(0, len(cipher), 2):
-        inv_key = mod_inverse(key_pair[0], 31 ** 2)
-        if inv_key is None:
-            return None
-
         y = alphabet.index(cipher[i]) * 31 + alphabet.index(cipher[i + 1])
-        x = (inv_key * (y - key_pair[1])) % (31 ** 2)
-        plain_text += alphabet[x // 31] + alphabet[x % 31]
-    return plain_text
+        x = (inv_key * (y - key_pair[1])) % modulus
+        decrypted_text += alphabet[x // 31] + alphabet[x % 31]
+    return decrypted_text
 
-def attempt_decryption(ciphered_text, key_list):
-    forbidden_bigrams = {'аы', 'оы', 'иы', 'ыы', 'уы', 'еы', 'аь', 'оь', 'иь', 'ыь', 'уь', 'еь', 'юы', 'яы',
-                         'эы', 'юь', 'яь', 'эь', 'ць', 'хь', 'кь', 'ьь', 'йй', 'йь', 'йы', 'ыю'}
-    for key in key_list:
-        decrypted = decipher_text(ciphered_text, key)
-        if decrypted and not any(bigram in decrypted for bigram in forbidden_bigrams):
+def try_decrypting(ciphered_text, keys):
+    invalid_bigrams = {'аы', 'оы', 'иы', 'ыы', 'уы', 'еы', 'аь', 'оь', 'иь', 'ыь', 'уь', 'еь', 'юы', 'яы', 'эы', 'юь', 'яь', 'эь', 'ць', 'хь', 'кь', 'ьь', 'йй', 'йь', 'йы', 'ыю'}
+    for key in keys:
+        decrypted = decrypt_cipher(ciphered_text, key)
+        if decrypted and not any(bg in decrypted for bg in invalid_bigrams):
             print(f'Decryption Key: {key}')
             with open("decrypted.txt", 'w', encoding='utf-8') as output_file:
                 output_file.write(decrypted)
-            return
+            break
 
 with open('07.txt', 'r', encoding='utf-8') as file:
     cipher_text = file.read().replace('\n', '')
 
-common_bigrams = ['ст', 'но', 'то', 'на', 'ен']
-observed_bigrams = get_top_bigrams(cipher_text)
-print(f'Top 5 bigrams in encrypted text: {observed_bigrams}')
+top_bigrams = ['ст', 'но', 'то', 'на', 'ен']
+observed_top_bigrams = get_frequent_bigrams(cipher_text)
+print(f'Top 5 bigrams in encrypted text: {observed_top_bigrams}')
 
-bigram_matches = match_bigrams(common_bigrams, observed_bigrams)
-key_options = derive_keys(bigram_matches)
-attempt_decryption(cipher_text, key_options)
+matched_bigrams = find_bigram_correspondences(top_bigrams, observed_top_bigrams)
+key_candidates = extract_possible_keys(matched_bigrams)
+try_decrypting(cipher_text, key_candidates)
