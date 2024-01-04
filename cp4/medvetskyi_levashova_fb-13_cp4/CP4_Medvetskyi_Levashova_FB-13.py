@@ -130,12 +130,14 @@ def send_key(public_key_receiver, private_key_sender):
     message = random.randint(0, 2**(256 - 1))  # генерируем сообщение
     encrypted_message = encrypt(message, public_key_receiver)  # шифруем сообщение
     signature = sign(message, private_key_sender)  # подписываем сообщение
-    return message, encrypted_message, signature
+    signature_encrypted = encrypt(signature, public_key_receiver) # шифруем подпись
+    return message, encrypted_message, signature_encrypted
 
 
-def receive_key(encrypted_message, signature, private_key_receiver, public_key_sender):
+def receive_key(encrypted_message, signature_encrypted, private_key_receiver, public_key_sender):
     decrypted_message = decrypt(encrypted_message, private_key_receiver)  # расшифровываем сообщение
-    verification_result = verify(signature, decrypted_message, public_key_sender)  # проверяем подпись
+    signature_decrypted = decrypt(signature_encrypted, private_key_receiver) # расшифровываем подпись
+    verification_result = verify(signature_decrypted, decrypted_message, public_key_sender)  # проверяем подпись
     return decrypted_message, verification_result
 
 
@@ -194,3 +196,6 @@ print("Проверка цифровой подписи:", verification_result_A
 # print("\nАбонент B:")
 # print("Разшифрованное сообщение:", decrypted_message_A)
 # print("Проверка цифровой подписи:", verification_result_A)
+
+
+
